@@ -149,7 +149,7 @@ select {
 /* --- RACE PROMPT --- */
 #race-prompt {
     position: fixed;
-    top: 32%;
+    top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
@@ -481,8 +481,8 @@ select {
     }
 
     #race-prompt {
-        top: 30% !important;
-        font-size: 42px !important;
+        top: 42% !important;
+        font-size: 38px !important;
         line-height: 0.95;
         padding: 6px 16px;
         max-width: 80vw;
@@ -576,8 +576,8 @@ select {
     }
 
     #race-prompt {
-        top: 29% !important;
-        font-size: 36px !important;
+        top: 43% !important;
+        font-size: 34px !important;
     }
 
     #race-prompt.go {
