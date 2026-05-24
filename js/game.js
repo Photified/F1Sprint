@@ -74,29 +74,33 @@ const waypoints = [
     {x: 1120, y: 170},
     {x: 1325, y: 175},
 
-    // Top-right corner: wide entry, apex, wide exit
-    {x: 1415, y: 200},
-    {x: 1460, y: 255},
-    {x: 1455, y: 315},
-    {x: 1405, y: 355},
-    {x: 1310, y: 370},
-    {x: 1190, y: 370},
+     // Top-right corner: wide entry, apex, wide exit
+  {x: 1415, y: 200},
+  {x: 1460, y: 255},
+  {x: 1455, y: 315},
+  {x: 1405, y: 355},
+  {x: 1310, y: 370},
+  {x: 1190, y: 370},
 
-    // Right inner loop: keep it wide around the island
-    {x: 1060, y: 385},
-    {x: 960, y: 400},
-    {x: 900, y: 455},
-    {x: 885, y: 535},
-    {x: 925, y: 580},
-    {x: 1025, y: 600},
-    {x: 1165, y: 600},
-    {x: 1305, y: 610},
+  // Right inner loop: force cars higher before turning down/right
+  {x: 1060, y: 385},
+  {x: 960, y: 420},
+  {x: 900, y: 475},
+  {x: 885, y: 535},
+  {x: 925, y: 580},
+  {x: 1025, y: 600},
 
-    // Bottom-right corner: wide entry, apex, wide exit
-    {x: 1405, y: 695},
-    {x: 1465, y: 700},
-    {x: 1460, y: 755},
-    {x: 1375, y: 792}
+  // Stay high/wide before corner entry
+  {x: 1160, y: 595},
+  {x: 1290, y: 590},
+  {x: 1400, y: 600},
+
+  // Final corner: outside first, then turn in
+  {x: 1470, y: 625},
+  {x: 1510, y: 675},
+  {x: 1510, y: 730},
+  {x: 1475, y: 775},
+  {x: 1375, y: 792}
 ];
 
 function formatTime(msTime) {
@@ -348,7 +352,7 @@ function update(time) {
         // This is your waypointRadius.
         // Smaller number = cars must get closer before switching points.
         // 45 is much better than 90 for this track.
-        if (dist < 45) {
+        if (dist < 35) {
             cpu.targetWP++;
 
             if (cpu.targetWP >= waypoints.length) {
