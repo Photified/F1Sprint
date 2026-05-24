@@ -3,9 +3,21 @@ const config = {
     width: 1600,
     height: 900,
     parent: 'game-container',
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    physics: { default: 'arcade', arcade: { debug: false } },
-    scene: { preload, create, update }
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    physics: {
+        default: 'arcade',
+        arcade: {
+            debug: false
+        }
+    },
+    scene: {
+        preload,
+        create,
+        update
+    }
 };
 
 const game = new Phaser.Game(config);
@@ -17,7 +29,9 @@ let cursors;
 // RACE STATE
 let raceStarted = false;
 let raceFinished = false;
-let startTime = 0, laps = 1, maxLaps = 3;
+let startTime = 0;
+let laps = 1;
+let maxLaps = 3;
 let checkpointReached = false;
 
 let lapStartTime = 0;
@@ -25,11 +39,15 @@ let bestLapTime = Infinity;
 let bestRaceTime = Infinity;
 
 let maskData = null;
-let prevX, prevY;
+let prevX;
+let prevY;
 let currentSpeed = 0;
 let maxSpeed = 450;
 
-let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
+let mobileLeft = false;
+let mobileRight = false;
+let mobileGas = false;
+let mobileBrake = false;
 
 // Hidden player waypoint tracking for accurate race position
 let playerTargetWP = 2;
@@ -114,7 +132,9 @@ const waypoints = [
 ];
 
 function formatTime(msTime) {
-    if (msTime === Infinity || !msTime) return "--:--.---";
+    if (msTime === Infinity || !msTime) {
+        return "--:--.---";
+    }
 
     let minutes = Math.floor(msTime / 60000);
     let seconds = Math.floor((msTime % 60000) / 1000);
@@ -131,7 +151,11 @@ function preload() {
 }
 
 function generateCarSprite(scene, keyName, mainColor) {
-    let carGen = scene.make.graphics({ x: 0, y: 0, add: false });
+    let carGen = scene.make.graphics({
+        x: 0,
+        y: 0,
+        add: false
+    });
 
     carGen.fillStyle(0x111111, 1);
     carGen.fillRoundedRect(2, 0, 6, 4, 1);
@@ -157,6 +181,7 @@ function generateCarSprite(scene, keyName, mainColor) {
 
 function getProgressScore(lapNumber, targetWP, x, y) {
     let target = waypoints[targetWP];
+
     let previousWP = targetWP - 1;
 
     if (previousWP < 0) {
@@ -202,7 +227,7 @@ function updatePlayerTrackProgress() {
         target.y
     );
 
-    // Larger than CPU radius because player may not follow exact AI line
+    // Larger than CPU radius because the player may not follow the exact AI line
     if (dist < 120) {
         playerTargetWP++;
 
@@ -245,9 +270,12 @@ function create() {
     offscreenCanvas.width = 1600;
     offscreenCanvas.height = 900;
 
-    let ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+    let ctx = offscreenCanvas.getContext('2d', {
+        willReadFrequently: true
+    });
 
     let srcMask = this.textures.get('maskImg').getSourceImage();
+
     ctx.drawImage(srcMask, 0, 0, 1600, 900);
     maskData = ctx.getImageData(0, 0, 1600, 900).data;
 
@@ -306,6 +334,7 @@ function create() {
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
     playerCar.setDepth(10);
     playerCar.angle = 180;
+
     playerCar.body.setCollideWorldBounds(true);
     playerCar.body.setBounce(0.4);
     playerCar.body.setMass(1);
@@ -315,14 +344,18 @@ function create() {
 
     this.physics.add.collider(playerCar, cpuGroup);
 
-    // CPU cars should not hard-collide with each other
+    // CPU cars should not hard-collide with each other.
+    // This prevents start-line pileups.
     this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
 
     const bindBtn = (id, keydown, keyup) => {
         const btn = document.getElementById(id);
-        if (!btn) return;
+
+        if (!btn) {
+            return;
+        }
 
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -334,12 +367,22 @@ function create() {
             keyup();
         });
 
+        btn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            keyup();
+        });
+
         btn.addEventListener('mousedown', (e) => {
             e.preventDefault();
             keydown();
         });
 
         btn.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            keyup();
+        });
+
+        btn.addEventListener('mouseleave', (e) => {
             e.preventDefault();
             keyup();
         });
@@ -369,7 +412,10 @@ function create() {
         } else {
             clearInterval(lightInterval);
 
-            document.querySelectorAll('.light').forEach(l => l.classList.remove('on'));
+            document.querySelectorAll('.light').forEach(light => {
+                light.classList.remove('on');
+            });
+
             document.getElementById('start-lights').style.display = 'none';
 
             safeShowRacePrompt("GO!", true);
@@ -390,7 +436,9 @@ function calculatePlayerPosition() {
     let rank = 1;
 
     cpuGroup.children.iterate((cpu) => {
-        if (!cpu) return;
+        if (!cpu) {
+            return;
+        }
 
         let cpuScore = cpu.trackProgress || 0;
 
@@ -414,7 +462,9 @@ function triggerRaceFinish(time) {
     currentSpeed = 0;
     playerCar.body.setVelocity(0);
 
-    cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
+    cpuGroup.children.iterate(cpu => {
+        cpu.body.setVelocity(0);
+    });
 
     let totalRaceTime = time - startTime;
 
@@ -424,9 +474,18 @@ function triggerRaceFinish(time) {
     let finalRank = calculatePlayerPosition();
 
     let suffix = "th";
-    if (finalRank === 1) suffix = "st";
-    if (finalRank === 2) suffix = "nd";
-    if (finalRank === 3) suffix = "rd";
+
+    if (finalRank === 1) {
+        suffix = "st";
+    }
+
+    if (finalRank === 2) {
+        suffix = "nd";
+    }
+
+    if (finalRank === 3) {
+        suffix = "rd";
+    }
 
     document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
 
@@ -452,7 +511,10 @@ function update(time) {
     if (!raceStarted || raceFinished) {
         playerCar.body.setVelocity(0);
 
-        cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
+        cpuGroup.children.iterate(cpu => {
+            cpu.body.setVelocity(0);
+        });
+
         return;
     }
 
@@ -606,7 +668,11 @@ function update(time) {
         currentSpeed *= 0.92;
     }
 
-    currentSpeed = Phaser.Math.Clamp(currentSpeed, -150, maxSpeed);
+    currentSpeed = Phaser.Math.Clamp(
+        currentSpeed,
+        -150,
+        maxSpeed
+    );
 
     playerCar.body.setAngularVelocity(0);
 
