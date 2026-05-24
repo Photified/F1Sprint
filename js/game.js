@@ -50,15 +50,15 @@ const waypoints = [
     {x: 340, y: 558},
     {x: 475, y: 550},
 
-    // Left-middle right bend
-    {x: 575, y: 535},
-    {x: 635, y: 500},
-    {x: 660, y: 455},
-    {x: 640, y: 415},
-    {x: 575, y: 390},
-    {x: 470, y: 378},
-    {x: 335, y: 370},
-    {x: 245, y: 360},
+    // Left-middle inner turn: tighter line
+    {x: 555, y: 535},
+    {x: 610, y: 505},
+    {x: 625, y: 465},
+    {x: 600, y: 430},
+    {x: 535, y: 405},
+    {x: 440, y: 390},
+    {x: 330, y: 380},
+    {x: 245, y: 365},
 
     // Top-left corner
     {x: 175, y: 330},
@@ -82,26 +82,26 @@ const waypoints = [
     {x: 1310, y: 370},
     {x: 1190, y: 370},
 
-    // Right inner loop: higher/left turn-in to stop cutting
-    {x: 1130, y: 365},
-    {x: 1015, y: 370},
-    {x: 925, y: 400},
-    {x: 855, y: 455},
-    {x: 830, y: 520},
-    {x: 860, y: 570},
-    {x: 940, y: 605},
-    {x: 1060, y: 615},
+    // Right inner loop: higher and farther left before turn-in
+    {x: 1120, y: 350},
+    {x: 1000, y: 350},
+    {x: 900, y: 375},
+    {x: 825, y: 430},
+    {x: 800, y: 500},
+    {x: 825, y: 560},
+    {x: 910, y: 605},
+    {x: 1045, y: 625},
 
-    // Stay high/wide before final corner
-    {x: 1190, y: 610},
-    {x: 1320, y: 600},
-    {x: 1420, y: 610},
+    // Stay higher before final corner
+    {x: 1175, y: 600},
+    {x: 1300, y: 585},
+    {x: 1410, y: 585},
 
-    // Final corner
-    {x: 1470, y: 625},
-    {x: 1510, y: 675},
-    {x: 1510, y: 730},
-    {x: 1475, y: 775},
+    // Final corner: higher entry before turning down
+    {x: 1490, y: 610},
+    {x: 1530, y: 665},
+    {x: 1530, y: 725},
+    {x: 1485, y: 775},
     {x: 1375, y: 792}
 ];
 
@@ -362,7 +362,7 @@ function update(time) {
 
         // This is the waypoint radius.
         // Smaller means they must actually reach the waypoint before advancing.
-        if (dist < 35) {
+        if (dist < 28) {
             cpu.targetWP++;
 
             if (cpu.targetWP >= waypoints.length) {
@@ -397,7 +397,7 @@ function update(time) {
 
         let angleDiff = Phaser.Math.Angle.Wrap(targetAngle - cpu.rotation);
 
-        // Stronger dynamic turning for the right-side inner loop.
+        // Dynamic turning.
         let turnSpeed = 0.12;
 
         if (Math.abs(angleDiff) > 1.0) {
