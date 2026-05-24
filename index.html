@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>F1 Sprint</title>
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest.json">
@@ -49,6 +49,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease, transform 0.2s ease;
+            white-space: nowrap;
         }
 
         #race-prompt.show {
@@ -126,21 +127,8 @@
         </div>
         <button id="btn-restart">Play Again</button>
     </div>
-    
-    <script src="js/game.js"></script>
-    
+
     <script>
-        const helpBtn = document.getElementById('btn-help');
-        const closeBtn = document.getElementById('btn-close');
-        const helpModal = document.getElementById('help-modal');
-
-        helpBtn.addEventListener('click', () => helpModal.classList.add('show'));
-        closeBtn.addEventListener('click', () => helpModal.classList.remove('show'));
-
-        document.getElementById('btn-restart').addEventListener('click', () => {
-            location.reload(); 
-        });
-
         const racePrompt = document.getElementById('race-prompt');
 
         function showRacePrompt(text, isGo = false) {
@@ -158,6 +146,21 @@
             racePrompt.classList.remove('show');
             racePrompt.classList.remove('go');
         }
+    </script>
+    
+    <script src="js/game.js"></script>
+    
+    <script>
+        const helpBtn = document.getElementById('btn-help');
+        const closeBtn = document.getElementById('btn-close');
+        const helpModal = document.getElementById('help-modal');
+
+        helpBtn.addEventListener('click', () => helpModal.classList.add('show'));
+        closeBtn.addEventListener('click', () => helpModal.classList.remove('show'));
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            location.reload(); 
+        });
 
         let deferredPrompt;
         const installBtn = document.getElementById('btn-install');
