@@ -33,74 +33,67 @@ let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = fa
 
 // --- PERFECTED RACING LINE (Mapped directly to your yellow line) ---
 const waypoints = [
+  // Main straight, moving left
+  {x: 1370, y: 795},
+  {x: 1180, y: 795},
+  {x: 980, y: 795},
+  {x: 780, y: 800},
+  {x: 580, y: 805},
+  {x: 380, y: 805},
+  {x: 250, y: 795},
 
-  // START / MAIN STRAIGHT
-  {x: 1320, y: 790},
-  {x: 1120, y: 790},
-  {x: 920, y: 790},
-  {x: 720, y: 790},
-  {x: 520, y: 790},
-  {x: 320, y: 785},
+  // Bottom-left bend
+  {x: 175, y: 755},
+  {x: 145, y: 690},
+  {x: 165, y: 625},
+  {x: 240, y: 585},
+  {x: 360, y: 560},
+  {x: 500, y: 550},
 
-  // BOTTOM LEFT HAIRPIN
-  {x: 210, y: 760},
-  {x: 135, y: 705},
-  {x: 110, y: 635},
-  {x: 145, y: 565},
-  {x: 245, y: 520},
+  // Left middle S section
+  {x: 610, y: 525},
+  {x: 640, y: 475},
+  {x: 600, y: 420},
+  {x: 500, y: 385},
+  {x: 360, y: 370},
+  {x: 250, y: 360},
 
-  // LEFT SIDE SWEEP
-  {x: 410, y: 500},
-  {x: 560, y: 500},
-  {x: 670, y: 485},
+  // Top-left bend into top straight
+  {x: 180, y: 330},
+  {x: 145, y: 275},
+  {x: 160, y: 215},
+  {x: 230, y: 175},
+  {x: 360, y: 170},
 
-  // CENTER LEFT S CURVE
-  {x: 735, y: 450},
-  {x: 760, y: 395},
-  {x: 725, y: 340},
+  // Top straight
+  {x: 560, y: 170},
+  {x: 780, y: 168},
+  {x: 1000, y: 170},
+  {x: 1220, y: 172},
+  {x: 1360, y: 178},
 
-  // TOP LEFT ENTRY
-  {x: 620, y: 305},
-  {x: 470, y: 300},
-  {x: 315, y: 300},
+  // Top-right bend
+  {x: 1430, y: 210},
+  {x: 1455, y: 270},
+  {x: 1430, y: 330},
+  {x: 1360, y: 360},
+  {x: 1240, y: 370},
 
-  // TOP LEFT HAIRPIN
-  {x: 205, y: 275},
-  {x: 135, y: 225},
-  {x: 120, y: 160},
-  {x: 170, y: 105},
-  {x: 285, y: 80},
+  // Right inner loop
+  {x: 1110, y: 375},
+  {x: 980, y: 390},
+  {x: 910, y: 430},
+  {x: 880, y: 490},
+  {x: 900, y: 545},
+  {x: 980, y: 580},
+  {x: 1120, y: 585},
+  {x: 1260, y: 595},
 
-  // TOP STRAIGHT
-  {x: 500, y: 75},
-  {x: 760, y: 75},
-  {x: 1030, y: 80},
-  {x: 1280, y: 85},
-
-  // TOP RIGHT HAIRPIN
-  {x: 1410, y: 120},
-  {x: 1490, y: 190},
-  {x: 1510, y: 270},
-  {x: 1480, y: 345},
-  {x: 1395, y: 400},
-
-  // RIGHT SIDE INNER SECTION
-  {x: 1260, y: 425},
-  {x: 1140, y: 445},
-  {x: 1065, y: 490},
-  {x: 1045, y: 555},
-  {x: 1110, y: 610},
-
-  // EXITING INNER SECTION
-  {x: 1240, y: 645},
-  {x: 1380, y: 670},
-
-  // FINAL HAIRPIN
-  {x: 1480, y: 705},
-  {x: 1510, y: 765},
-  {x: 1460, y: 820},
-  {x: 1320, y: 790}
-
+  // Bottom-right bend back to straight
+  {x: 1390, y: 630},
+  {x: 1455, y: 690},
+  {x: 1450, y: 750},
+  {x: 1370, y: 795}
 ];
 
 function formatTime(msTime) {
