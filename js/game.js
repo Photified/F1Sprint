@@ -31,7 +31,7 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
-// --- PERFECTED RACING LINE ---
+// --- RACING LINE ---
 const waypoints = [
     // Bottom straight
     {x: 1375, y: 792},
@@ -41,7 +41,7 @@ const waypoints = [
     {x: 520, y: 810},
     {x: 300, y: 805},
 
-    // Bottom-left corner: wide entry, apex, wide exit
+    // Bottom-left corner
     {x: 205, y: 775},
     {x: 145, y: 725},
     {x: 130, y: 665},
@@ -60,7 +60,7 @@ const waypoints = [
     {x: 335, y: 370},
     {x: 245, y: 360},
 
-    // Top-left corner: wide entry, apex, wide exit
+    // Top-left corner
     {x: 175, y: 330},
     {x: 135, y: 280},
     {x: 145, y: 225},
@@ -74,33 +74,35 @@ const waypoints = [
     {x: 1120, y: 170},
     {x: 1325, y: 175},
 
-     // Top-right corner: wide entry, apex, wide exit
-  {x: 1415, y: 200},
-  {x: 1460, y: 255},
-  {x: 1455, y: 315},
-  {x: 1405, y: 355},
-  {x: 1310, y: 370},
-  {x: 1190, y: 370},
+    // Top-right corner
+    {x: 1415, y: 200},
+    {x: 1460, y: 255},
+    {x: 1455, y: 315},
+    {x: 1405, y: 355},
+    {x: 1310, y: 370},
+    {x: 1190, y: 370},
 
-  // Right inner loop: force cars higher before turning down/right
-  {x: 1060, y: 385},
-  {x: 960, y: 420},
-  {x: 900, y: 475},
-  {x: 885, y: 535},
-  {x: 925, y: 580},
-  {x: 1025, y: 600},
+    // Right inner loop: higher/left turn-in to stop cutting
+    {x: 1130, y: 365},
+    {x: 1015, y: 370},
+    {x: 925, y: 400},
+    {x: 855, y: 455},
+    {x: 830, y: 520},
+    {x: 860, y: 570},
+    {x: 940, y: 605},
+    {x: 1060, y: 615},
 
-  // Stay high/wide before corner entry
-  {x: 1160, y: 595},
-  {x: 1290, y: 590},
-  {x: 1400, y: 600},
+    // Stay high/wide before final corner
+    {x: 1190, y: 610},
+    {x: 1320, y: 600},
+    {x: 1420, y: 610},
 
-  // Final corner: outside first, then turn in
-  {x: 1470, y: 625},
-  {x: 1510, y: 675},
-  {x: 1510, y: 730},
-  {x: 1475, y: 775},
-  {x: 1375, y: 792}
+    // Final corner
+    {x: 1470, y: 625},
+    {x: 1510, y: 675},
+    {x: 1510, y: 730},
+    {x: 1475, y: 775},
+    {x: 1375, y: 792}
 ];
 
 function formatTime(msTime) {
@@ -176,12 +178,18 @@ function create() {
 
     cpuGroup = this.physics.add.group();
 
-    const spawnCPU = (x, y, color, speed) => {
+    const spawnCPU = (x, y, color, speed, laneOffset = 0, startDelay = 0) => {
         let cpu = cpuGroup.create(x, y, color);
 
         cpu.targetWP = 2;
         cpu.baseSpeed = speed;
         cpu.speed = speed;
+
+        // Different AI lanes so they do not all target the same exact pixel.
+        cpu.laneOffset = laneOffset;
+
+        // Small launch delay so they do not all pile into each other.
+        cpu.startDelay = startDelay;
 
         cpu.laps = 1;
         cpu.checkpointReached = false;
@@ -191,22 +199,23 @@ function create() {
         cpu.angle = 180;
 
         cpu.body.setCollideWorldBounds(true);
-        cpu.body.setBounce(0.5);
-        cpu.body.setMass(1.5);
+        cpu.body.setBounce(0.15);
+        cpu.body.setMass(0.8);
+        cpu.body.setDrag(20);
     };
 
     // --- ALIGNED & STAGGERED 8-CAR GRID ---
 
     // Top Row
-    spawnCPU(870, 767, 'car-blue', 400);
-    spawnCPU(970, 767, 'car-green', 380);
-    spawnCPU(1070, 767, 'car-orange', 360);
-    spawnCPU(1170, 767, 'car-pink', 340);
+    spawnCPU(870, 767, 'car-blue', 370, -18, 0);
+    spawnCPU(970, 767, 'car-green', 360, 18, 250);
+    spawnCPU(1070, 767, 'car-orange', 350, -10, 500);
+    spawnCPU(1170, 767, 'car-pink', 340, 10, 750);
 
     // Bottom Row
-    spawnCPU(900, 813, 'car-yellow', 390);
-    spawnCPU(1000, 813, 'car-purple', 370);
-    spawnCPU(1100, 813, 'car-cyan', 350);
+    spawnCPU(900, 813, 'car-yellow', 365, 22, 150);
+    spawnCPU(1000, 813, 'car-purple', 355, -22, 400);
+    spawnCPU(1100, 813, 'car-cyan', 345, 0, 650);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
@@ -220,7 +229,9 @@ function create() {
     prevY = playerCar.y;
 
     this.physics.add.collider(playerCar, cpuGroup);
-    this.physics.add.collider(cpuGroup, cpuGroup);
+
+    // CPU cars should not hard-collide with each other.
+    this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
 
@@ -349,9 +360,8 @@ function update(time) {
             target.y
         );
 
-        // This is your waypointRadius.
-        // Smaller number = cars must get closer before switching points.
-        // 45 is much better than 90 for this track.
+        // This is the waypoint radius.
+        // Smaller means they must actually reach the waypoint before advancing.
         if (dist < 35) {
             cpu.targetWP++;
 
@@ -362,23 +372,38 @@ function update(time) {
             target = waypoints[cpu.targetWP];
         }
 
+        // Offset target sideways so cars do not all aim at the exact same pixel.
+        let nextWP = waypoints[(cpu.targetWP + 1) % waypoints.length];
+
+        let pathAngle = Phaser.Math.Angle.Between(
+            target.x,
+            target.y,
+            nextWP.x,
+            nextWP.y
+        );
+
+        let offsetX = Math.cos(pathAngle + Math.PI / 2) * cpu.laneOffset;
+        let offsetY = Math.sin(pathAngle + Math.PI / 2) * cpu.laneOffset;
+
+        let targetX = target.x + offsetX;
+        let targetY = target.y + offsetY;
+
         let targetAngle = Phaser.Math.Angle.Between(
             cpu.x,
             cpu.y,
-            target.x,
-            target.y
+            targetX,
+            targetY
         );
 
         let angleDiff = Phaser.Math.Angle.Wrap(targetAngle - cpu.rotation);
 
-        // Dynamic turning.
-        // Cars turn harder when the next point requires a sharper angle.
+        // Stronger dynamic turning for the right-side inner loop.
         let turnSpeed = 0.12;
 
         if (Math.abs(angleDiff) > 1.0) {
-            turnSpeed = 0.22;
+            turnSpeed = 0.26;
         } else if (Math.abs(angleDiff) > 0.5) {
-            turnSpeed = 0.16;
+            turnSpeed = 0.18;
         }
 
         cpu.rotation = Phaser.Math.Angle.RotateTo(
@@ -388,13 +413,18 @@ function update(time) {
         );
 
         // Dynamic speed.
-        // Cars slow down for corners so they do not overshoot the track.
         let targetSpeed = cpu.baseSpeed || cpu.speed;
 
+        // Staggered launch.
+        if (time - startTime < cpu.startDelay) {
+            targetSpeed = 0;
+        }
+
+        // Slow down harder for corners so they do not cut.
         if (Math.abs(angleDiff) > 0.8) {
-            targetSpeed *= 0.55;
+            targetSpeed *= 0.48;
         } else if (Math.abs(angleDiff) > 0.4) {
-            targetSpeed *= 0.75;
+            targetSpeed *= 0.68;
         }
 
         this.physics.velocityFromRotation(
@@ -403,6 +433,7 @@ function update(time) {
             cpu.body.velocity
         );
 
+        // CPU lap logic
         if (cpu.y < 350) {
             cpu.checkpointReached = true;
         }
