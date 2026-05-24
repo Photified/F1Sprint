@@ -90,21 +90,21 @@ const waypoints = [
     {x: 800, y: 500},
     {x: 825, y: 560},
 
-    // Right inner loop exit: moved farther right
-    {x: 925, y: 605},
-    {x: 1065, y: 625},
-    {x: 1195, y: 615},
+    // Right inner loop exit: higher and farther right
+    {x: 930, y: 585},
+    {x: 1075, y: 600},
+    {x: 1215, y: 590},
 
-    // Stay higher before final corner
-    {x: 1315, y: 590},
-    {x: 1425, y: 575},
+    // Stay high before final corner
+    {x: 1325, y: 565},
+    {x: 1405, y: 555},
 
-    // Final corner: higher entry before turning down
-    {x: 1500, y: 590},
-    {x: 1535, y: 650},
-    {x: 1530, y: 720},
-    {x: 1485, y: 775},
-    {x: 1375, y: 792}
+    // Final corner: tighter, entry and exit pulled left
+    {x: 1465, y: 585},
+    {x: 1500, y: 645},
+    {x: 1495, y: 710},
+    {x: 1445, y: 765},
+    {x: 1345, y: 792}
 ];
 
 function formatTime(msTime) {
