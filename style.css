@@ -15,46 +15,51 @@ body, html {
 
 #btn-help { background: none; border: none; font-size: 30px; cursor: pointer; color: white; }
 
+/* --- 3-COLUMN FLEXBOX LAYOUT --- */
 #game-wrapper {
-    flex: 1; width: 100%; position: relative; display: flex;
-    justify-content: center; align-items: center; background-color: #222; overflow: hidden;
+    flex: 1; width: 100%; display: flex; flex-direction: row;
+    justify-content: space-between; align-items: stretch; 
+    background-color: #111; overflow: hidden;
 }
 
-#game-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-#game-container canvas { display: block; width: 100% !important; height: 100% !important; object-fit: contain; }
+#game-container { 
+    flex: 1; /* Automatically fills the remaining middle space */
+    min-width: 0; /* Crucial for flex children to allow canvas scaling */
+    position: relative;
+    display: flex; justify-content: center; align-items: center; 
+}
 
-/* --- MOBILE CONTROLS STYLING (Split Layout) --- */
-#mobile-controls {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; 
+#game-container canvas { 
+    display: block; 
+    /* Phaser will automatically scale the canvas to fit within this container */
+    margin: auto; 
+}
+
+/* --- SIDE CONTROL ZONES --- */
+.side-controls {
+    width: 170px; /* Dedicated thumb zone width */
+    display: flex; flex-direction: row;
+    justify-content: center; align-items: center; gap: 10px;
+    flex-shrink: 0; /* Ensures the game track cannot squish the buttons */
+    background-color: #111; /* Blends with pillarbox */
     z-index: 20;
 }
 
-.left-controls {
-    position: absolute; bottom: 30px; left: 30px;
-    display: flex; gap: 15px; align-items: center;
-}
-
-.right-controls {
-    position: absolute; bottom: 30px; right: 30px;
-    display: flex; gap: 15px; align-items: center;
-}
-
-#mobile-controls button {
+.side-controls button {
     pointer-events: auto; 
     background: rgba(50, 50, 50, 0.7);
     border: 2px solid rgba(255, 255, 255, 0.4);
-    color: white; font-weight: bold; font-size: 24px;
-    border-radius: 50%; width: 75px; height: 75px;
+    color: white; font-weight: bold; font-size: 20px;
+    border-radius: 50%; width: 70px; height: 70px;
     touch-action: none; 
     user-select: none; -webkit-user-select: none;
     display: flex; justify-content: center; align-items: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-#mobile-controls button:active { background: rgba(255, 255, 255, 0.6); transform: scale(0.95); }
-#btn-gas { background: rgba(225, 6, 0, 0.8) !important; width: 85px !important; height: 85px !important; }
-#btn-brake { font-size: 18px !important; }
+.side-controls button:active { background: rgba(255, 255, 255, 0.6); transform: scale(0.95); }
+#btn-gas { background: rgba(225, 6, 0, 0.8) !important; width: 80px !important; height: 80px !important; }
+#btn-brake { font-size: 16px !important; }
 
 /* Modals */
 #help-modal {
@@ -67,7 +72,7 @@ body, html {
 #btn-close { background: #555; color: white; }
 #btn-install { background: #e10600; color: white; margin-left: 10px; display: none; }
 
-/* --- ORIENTATION LOCK --- */
+/* Orientation Lock */
 #rotate-warning {
     display: none;
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;

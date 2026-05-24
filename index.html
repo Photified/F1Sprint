@@ -16,21 +16,26 @@
         <div class="ui-item title">🏎️ RETRO F1</div>
         <div class="ui-item">LAP: <span id="lap-counter">1</span>/3</div>
         <div class="ui-item">TIME: <span id="timer-display">00:00.000</span></div>
+        
+        <div class="ui-item" style="font-size: 14px; text-align: right; color: #aaa; line-height: 1.2;">
+            BEST LAP: <span id="best-lap" style="color: #fff;">--:--.---</span><br>
+            BEST RACE: <span id="best-race" style="color: #fff;">--:--.---</span>
+        </div>
+        
         <button id="btn-help" title="Help">⚙️</button>
     </div>
 
     <div id="game-wrapper">
+        <div class="side-controls left-controls">
+            <button id="btn-brake">BRK</button>
+            <button id="btn-gas">GAS</button>
+        </div>
+
         <div id="game-container"></div>
         
-        <div id="mobile-controls">
-            <div class="left-controls">
-                <button id="btn-brake">BRK</button>
-                <button id="btn-gas">GAS</button>
-            </div>
-            <div class="right-controls">
-                <button id="btn-left">◀</button>
-                <button id="btn-right">▶</button>
-            </div>
+        <div class="side-controls right-controls">
+            <button id="btn-left">◀</button>
+            <button id="btn-right">▶</button>
         </div>
     </div>
 
