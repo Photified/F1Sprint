@@ -9,7 +9,7 @@ const config = {
     },
     physics: {
         default: 'arcade',
-        arcade: { debug: false } // No more boxes needed!
+        arcade: { debug: false } // No more purple boxes!
     },
     scene: { preload, create, update }
 };
@@ -32,8 +32,9 @@ let maskCanvas;
 let prevX, prevY; // Stores the car's last safe position
 
 function preload() {
+    // Make sure both of these exact files are uploaded to your GitHub!
     this.load.image('trackImg', 'track.png'); 
-    this.load.image('maskImg', 'mask.png'); // Load your new custom mask!
+    this.load.image('maskImg', 'mask.png'); 
 }
 
 function create() {
@@ -49,7 +50,7 @@ function create() {
     maskCanvas.context.drawImage(srcMask, 0, 0, 1600, 900);
 
     // ==========================================
-    // THE CAR SPRITE
+    // THE CAR SPRITE (50% Scaled down)
     // ==========================================
     let carGen = this.make.graphics({ x: 0, y: 0, add: false });
     carGen.fillStyle(0x111111, 1);
@@ -68,12 +69,15 @@ function create() {
     carGen.fillCircle(11, 10, 2.5);
     carGen.generateTexture('f1-sprite', 25, 20);
 
-    // SPAWN PLAYER
+    // ==========================================
+    // SPAWN PLAYER ON THE GRID
+    // ==========================================
     playerCar = this.physics.add.sprite(930, 835, 'f1-sprite');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setCollideWorldBounds(true);
     
+    // Initialize the safe spot
     prevX = playerCar.x;
     prevY = playerCar.y;
 
@@ -89,34 +93,39 @@ function update(time) {
         // Read the pixel on the MASK exactly where the car is
         maskCanvas.getPixel(Math.floor(playerCar.x), Math.floor(playerCar.y), pixel);
         
-        // 1. BLACK PIXEL: Solid Wall Hit
-        if (pixel.r < 50 && pixel.g < 50 && pixel.b < 50) { 
-            // Teleport the car back to the last safe frame so it doesn't get stuck
+        // 1. SAFE PIXEL (White or Transparent): Normal Asphalt
+        if (pixel.a === 0 || (pixel.r > 200 && pixel.g > 200 && pixel.b > 200)) { 
+            playerCar.body.setDrag(1500); 
+            playerCar.body.setMaxVelocity(550);
+            prevX = playerCar.x; // Save safe spot
+            prevY = playerCar.y;
+        }
+        // 2. BLACK PIXEL: Solid Wall Hit
+        else if (pixel.r < 50 && pixel.g < 50 && pixel.b < 50) { 
+            // Teleport back to the last known safe spot
             playerCar.x = prevX;
             playerCar.y = prevY;
-            // Kill speed and bounce backwards slightly
+            // Bounce backwards slightly
             playerCar.body.velocity.x *= -0.5;
             playerCar.body.velocity.y *= -0.5;
         } 
-        // 2. RED PIXEL: Grass / Dirt
+        // 3. RED PIXEL: Grass / Dirt
         else if (pixel.r > 200 && pixel.g < 100 && pixel.b < 100) { 
             playerCar.body.setDrag(2500);
             playerCar.body.setMaxVelocity(120);
-            // Save as a safe spot
-            prevX = playerCar.x;
+            prevX = playerCar.x; // Save safe spot
             prevY = playerCar.y;
         } 
-        // 3. WHITE PIXEL: Asphalt (Or anything else)
-        else { 
+        // 4. CATCH-ALL FAILSAFE (Treat as Asphalt)
+        else {
             playerCar.body.setDrag(1500); 
             playerCar.body.setMaxVelocity(550);
-            // Save as a safe spot
             prevX = playerCar.x;
             prevY = playerCar.y;
         }
     } catch(e) {}
 
-    // --- CONTROLS ---
+    // --- CONTROLS (HIGH GRIP SETUP) ---
     playerCar.body.setAngularVelocity(0);
     
     if (cursors.left.isDown) {
