@@ -1,5 +1,5 @@
 // --- DEBUG SETTING ---
-// Keep this TRUE for now! It draws yellow dots so you can see the CPU's path.
+// Keep this TRUE to see the yellow string. Turn to FALSE when it looks perfect!
 const SHOW_WAYPOINTS = true; 
 
 const config = {
@@ -15,7 +15,7 @@ const config = {
 const game = new Phaser.Game(config);
 
 let playerCar;
-let cpuGroup; // Group to hold the CPU cars
+let cpuGroup; 
 let cursors;
 
 let startTime = 0, laps = 1, maxLaps = 3;
@@ -32,28 +32,27 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
-// --- CPU WAYPOINTS ---
-// The CPU will drive to each of these points in order, then loop back to 0.
-// You will need to tweak these X/Y coordinates slightly so they stay off the grass!
+// --- FIXED CPU WAYPOINTS (The Racing Line) ---
+// I mapped these strictly to the asphalt based on your screenshot!
 const waypoints = [
-    {x: 800, y: 835},  // 0: Start straight
-    {x: 200, y: 835},  // 1: Bottom left straight
-    {x: 100, y: 720},  // 2: Left Hairpin apex
-    {x: 180, y: 580},  // 3: Exit hairpin
-    {x: 700, y: 580},  // 4: Middle straight
-    {x: 800, y: 480},  // 5: Turn up into S-curve
-    {x: 600, y: 380},  // 6: Middle S-curve left
-    {x: 200, y: 380},  // 7: Top left straight
-    {x: 100, y: 260},  // 8: Top left hairpin apex
-    {x: 200, y: 140},  // 9: Exit top left hairpin
-    {x: 1350, y: 140}, // 10: Top straight right
-    {x: 1480, y: 250}, // 11: Top right hairpin apex
-    {x: 1350, y: 380}, // 12: Enter Chicane
-    {x: 1050, y: 500}, // 13: Middle Chicane
-    {x: 1150, y: 620}, // 14: Exit Chicane
-    {x: 1480, y: 650}, // 15: Bottom right curve enter
-    {x: 1480, y: 835}, // 16: Bottom right curve apex
-    {x: 1200, y: 835}  // 17: Back to start straight
+    {x: 1200, y: 830}, // Before Start Line
+    {x: 800, y: 830},  // Start line
+    {x: 250, y: 830},  // End of bottom straight
+    {x: 150, y: 720},  // Bottom left curve apex
+    {x: 250, y: 600},  // Bottom left exit
+    {x: 650, y: 600},  // Middle straight
+    {x: 800, y: 480},  // Entering S-curve
+    {x: 650, y: 380},  // Exiting S-curve
+    {x: 250, y: 380},  // Top left straight
+    {x: 150, y: 260},  // Top left hairpin apex
+    {x: 250, y: 150},  // Top left exit
+    {x: 1300, y: 150}, // End of top straight
+    {x: 1450, y: 250}, // Top right curve apex
+    {x: 1300, y: 380}, // Approaching chicane
+    {x: 1050, y: 500}, // Chicane apex
+    {x: 1250, y: 650}, // Chicane exit
+    {x: 1450, y: 750}, // Bottom right curve apex
+    {x: 1300, y: 830}  // Bottom right exit
 ];
 
 function formatTime(msTime) {
@@ -71,7 +70,6 @@ function preload() {
     this.load.image('maskImg', 'mask.png'); 
 }
 
-// Reusable function to draw cars in different colors
 function generateCarSprite(scene, keyName, mainColor) {
     let carGen = scene.make.graphics({ x: 0, y: 0, add: false });
     carGen.fillStyle(0x111111, 1);
@@ -97,19 +95,21 @@ function create() {
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // Draw visual waypoints if debug is on
+    // --- DEV TOOL: CLICK TO GET COORDINATES ---
+    this.input.on('pointerdown', function (pointer) {
+        console.log(`Clicked X: ${Math.floor(pointer.x)}, Y: ${Math.floor(pointer.y)}`);
+    });
+
     if (SHOW_WAYPOINTS) {
         let wpGraphics = this.add.graphics();
-        wpGraphics.fillStyle(0xffff00, 0.8); // Yellow dots
+        wpGraphics.fillStyle(0xffff00, 0.8); 
         waypoints.forEach((wp, index) => {
             wpGraphics.fillCircle(wp.x, wp.y, 8);
-            // Draw lines between them
             if(index > 0) {
                 wpGraphics.lineStyle(2, 0xffff00, 0.5);
                 wpGraphics.lineBetween(waypoints[index-1].x, waypoints[index-1].y, wp.x, wp.y);
             }
         });
-        // Close the loop line
         wpGraphics.lineBetween(waypoints[waypoints.length-1].x, waypoints[waypoints.length-1].y, waypoints[0].x, waypoints[0].y);
     }
 
@@ -122,34 +122,28 @@ function create() {
     ctx.drawImage(srcMask, 0, 0, 1600, 900);
     maskData = ctx.getImageData(0, 0, 1600, 900).data;
 
-    // Generate Car Sprites
-    generateCarSprite(this, 'car-red', 0xe10600); // Player
-    generateCarSprite(this, 'car-blue', 0x0055ff); // CPU 1
-    generateCarSprite(this, 'car-yellow', 0xffcc00); // CPU 2
+    generateCarSprite(this, 'car-red', 0xe10600); 
+    generateCarSprite(this, 'car-blue', 0x0055ff); 
+    generateCarSprite(this, 'car-yellow', 0xffcc00); 
 
-    // --- SETUP CPU CARS ---
     cpuGroup = this.physics.add.group();
     
-    // CPU 1 (Blue)
-    let cpu1 = cpuGroup.create(930, 790, 'car-blue'); // Spawned in row 2
-    cpu1.targetWP = 0; // Starts aiming for waypoint 0
-    cpu1.speed = 360;  // Top speed of this CPU
+    let cpu1 = cpuGroup.create(930, 790, 'car-blue'); 
+    cpu1.targetWP = 1; // Start aiming for waypoint 1
+    cpu1.speed = 360;  
 
-    // CPU 2 (Yellow)
-    let cpu2 = cpuGroup.create(1000, 835, 'car-yellow'); // Spawned in row 3
-    cpu2.targetWP = 0;
+    let cpu2 = cpuGroup.create(1000, 835, 'car-yellow'); 
+    cpu2.targetWP = 1;
     cpu2.speed = 340; 
 
-    // Apply physics rules to all CPUs
     cpuGroup.children.iterate((cpu) => {
         cpu.setDepth(10);
         cpu.angle = 180;
         cpu.body.setCollideWorldBounds(true);
-        cpu.body.setBounce(0.4); // Allows them to bounce when hit
-        cpu.body.setMass(1.5);   // Makes them feel heavy when you hit them
+        cpu.body.setBounce(0.4); 
+        cpu.body.setMass(1.5);   
     });
 
-    // --- SETUP PLAYER ---
     playerCar = this.physics.add.sprite(930, 835, 'car-red');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
@@ -160,8 +154,6 @@ function create() {
     prevX = playerCar.x; 
     prevY = playerCar.y;
 
-    // --- COLLISION LOGIC ---
-    // Make cars smash into each other!
     this.physics.add.collider(playerCar, cpuGroup);
     this.physics.add.collider(cpuGroup, cpuGroup);
 
@@ -192,28 +184,19 @@ function update(time) {
     cpuGroup.children.iterate((cpu) => {
         let target = waypoints[cpu.targetWP];
         
-        // 1. Calculate distance to current target dot
         let dist = Phaser.Math.Distance.Between(cpu.x, cpu.y, target.x, target.y);
         
-        // 2. If close enough, switch to the next dot in the array
         if (dist < 80) {
             cpu.targetWP++;
-            if (cpu.targetWP >= waypoints.length) cpu.targetWP = 0; // Loop back to start
+            if (cpu.targetWP >= waypoints.length) cpu.targetWP = 0; 
             target = waypoints[cpu.targetWP];
         }
 
-        // 3. Calculate the angle to the dot
         let targetAngle = Phaser.Math.Angle.Between(cpu.x, cpu.y, target.x, target.y);
-        
-        // 4. Smoothly turn the steering wheel towards the target
-        // The 0.05 controls how fast they steer. Lower = wider turns.
         cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.05);
-
-        // 5. Hit the gas!
         this.physics.velocityFromRotation(cpu.rotation, cpu.speed, cpu.body.velocity);
     });
 
-    // --- PLAYER MASK LOGIC ---
     let x = Math.floor(playerCar.x);
     let y = Math.floor(playerCar.y);
 
@@ -234,7 +217,6 @@ function update(time) {
         else { maxSpeed = 450; }
     }
 
-    // --- PLAYER CONTROLS ---
     if (cursors.up.isDown || mobileGas) {
         currentSpeed += 15; 
     } else if (cursors.down.isDown || mobileBrake) {
@@ -253,7 +235,6 @@ function update(time) {
 
     this.physics.velocityFromRotation(playerCar.rotation, currentSpeed, playerCar.body.velocity);
 
-    // --- LAP LOGIC ---
     if (playerCar.y < 350) checkpointReached = true;
 
     if (checkpointReached && playerCar.y > 700 && prevX > 730 && playerCar.x <= 730) {
