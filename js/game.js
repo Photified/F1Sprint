@@ -10,8 +10,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: { 
-            // Purple debug boxes are ON so you can map out the walls
-            debug: true 
+            debug: true // KEEP THIS ON until you finish moving your purple boxes!
         }
     },
     scene: { preload, create, update }
@@ -33,18 +32,16 @@ let startLineX = 725;
 let trackTextureCanvas;
 
 function preload() {
-    // 🚨 THIS MUST EXACTLY MATCH YOUR GITHUB FILE NAME (Case-sensitive!) 🚨
     this.load.image('trackImg', 'track.png'); 
 }
 
 function create() {
     startTime = this.time.now;
 
-    // Center the background image
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // CRITICAL FIX: Safe way to read the image pixels without crashing the browser
+    // Pixel reader setup
     trackTextureCanvas = this.textures.createCanvas('trackPixelMap', 1600, 900);
     let srcImg = this.textures.get('trackImg').getSourceImage();
     trackTextureCanvas.context.drawImage(srcImg, 0, 0, 1600, 900);
@@ -54,14 +51,15 @@ function create() {
     // ==========================================
     trackWalls = this.physics.add.staticGroup();
 
+    // CHANGE THESE NUMBERS TO MOVE THE PURPLE BOXES
+    // x = left/right, y = up/down, w = width, h = height
     const wallData = [
-        // Outer Screen Edges
-        { x: 800, y: -25, w: 1600, h: 50 }, 
-        { x: 800, y: 925, w: 1600, h: 50 }, 
-        { x: -25, y: 450, w: 50, h: 900 },  
-        { x: 1625, y: 450, w: 50, h: 900 }, 
+        { x: 800, y: -25, w: 1600, h: 50 }, // Top screen edge
+        { x: 800, y: 925, w: 1600, h: 50 }, // Bottom screen edge
+        { x: -25, y: 450, w: 50, h: 900 },  // Left screen edge
+        { x: 1625, y: 450, w: 50, h: 900 }, // Right screen edge
 
-        // Inner Islands (Tweak these numbers based on the purple boxes!)
+        // These are the ones you need to adjust to cover your grass!
         { x: 400, y: 550, w: 550, h: 100 }, 
         { x: 1200, y: 400, w: 550, h: 150 },
         { x: 800, y: 250, w: 400, h: 150 }, 
@@ -94,10 +92,12 @@ function create() {
     carGen.generateTexture('f1-sprite', 50, 40);
 
     // ==========================================
-    // 3. SPAWN PLAYER ON THE GRID
+    // 3. SPAWN PLAYER 
     // ==========================================
-    // Spawning on the grid, facing LEFT
-    playerCar = this.physics.add.sprite(820, 810, 'f1-sprite');
+    // I spawned it DEAD CENTER (800, 450) so you can see it. 
+    // Change this back to (820, 810) once the screen isn't cutting off!
+    playerCar = this.physics.add.sprite(800, 450, 'f1-sprite');
+    playerCar.setDepth(10); // Forces car to render ON TOP of the track
     playerCar.angle = 180; 
     playerCar.body.setBounce(0.4); 
     playerCar.body.setCollideWorldBounds(true);
