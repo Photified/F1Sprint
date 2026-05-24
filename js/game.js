@@ -84,8 +84,8 @@ const waypoints = [
 
     // Right inner loop: keep it wide around the island
     {x: 1060, y: 385},
-    {x: 960, y: 420},
-    {x: 900, y: 475},
+    {x: 960, y: 400},
+    {x: 900, y: 455},
     {x: 885, y: 535},
     {x: 925, y: 580},
     {x: 1025, y: 600},
@@ -93,7 +93,7 @@ const waypoints = [
     {x: 1305, y: 610},
 
     // Bottom-right corner: wide entry, apex, wide exit
-    {x: 1405, y: 645},
+    {x: 1405, y: 695},
     {x: 1465, y: 700},
     {x: 1460, y: 755},
     {x: 1375, y: 792}
