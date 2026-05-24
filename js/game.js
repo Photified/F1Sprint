@@ -10,7 +10,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: { 
-            debug: true // KEEP THIS ON until you finish moving your purple boxes!
+            debug: false // Turned off! No more confusing purple boxes.
         }
     },
     scene: { preload, create, update }
@@ -27,8 +27,6 @@ let laps = 0;
 let maxLaps = 3;
 let checkpointReached = false;
 let raceFinished = false;
-
-let startLineX = 725; 
 let trackTextureCanvas;
 
 function preload() {
@@ -41,30 +39,21 @@ function create() {
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // Pixel reader setup
+    // Pixel reader for the grass
     trackTextureCanvas = this.textures.createCanvas('trackPixelMap', 1600, 900);
     let srcImg = this.textures.get('trackImg').getSourceImage();
     trackTextureCanvas.context.drawImage(srcImg, 0, 0, 1600, 900);
 
     // ==========================================
-    // 1. INVISIBLE PHYSICS WALLS
+    // 1. OUTER BOUNDARIES (Keeps you on screen)
     // ==========================================
     trackWalls = this.physics.add.staticGroup();
-
-    // CHANGE THESE NUMBERS TO MOVE THE PURPLE BOXES
-    // x = left/right, y = up/down, w = width, h = height
     const wallData = [
-        { x: 800, y: -25, w: 1600, h: 50 }, // Top screen edge
-        { x: 800, y: 925, w: 1600, h: 50 }, // Bottom screen edge
-        { x: -25, y: 450, w: 50, h: 900 },  // Left screen edge
-        { x: 1625, y: 450, w: 50, h: 900 }, // Right screen edge
-
-        // These are the ones you need to adjust to cover your grass!
-        { x: 400, y: 550, w: 550, h: 100 }, 
-        { x: 1200, y: 400, w: 550, h: 150 },
-        { x: 800, y: 250, w: 400, h: 150 }, 
+        { x: 800, y: -25, w: 1600, h: 50 }, 
+        { x: 800, y: 925, w: 1600, h: 50 }, 
+        { x: -25, y: 450, w: 50, h: 900 },  
+        { x: 1625, y: 450, w: 50, h: 900 }
     ];
-
     wallData.forEach(wall => {
         let hitbox = this.add.rectangle(wall.x, wall.y, wall.w, wall.h, 0x000000, 0); 
         this.physics.add.existing(hitbox, true); 
@@ -92,12 +81,11 @@ function create() {
     carGen.generateTexture('f1-sprite', 50, 40);
 
     // ==========================================
-    // 3. SPAWN PLAYER 
+    // 3. SPAWN PLAYER ON THE GRID
     // ==========================================
-    // I spawned it DEAD CENTER (800, 450) so you can see it. 
-    // Change this back to (820, 810) once the screen isn't cutting off!
-    playerCar = this.physics.add.sprite(800, 450, 'f1-sprite');
-    playerCar.setDepth(10); // Forces car to render ON TOP of the track
+    // Spawns perfectly on the bottom-right grid slot facing left
+    playerCar = this.physics.add.sprite(950, 835, 'f1-sprite');
+    playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setBounce(0.4); 
     playerCar.body.setCollideWorldBounds(true);
@@ -109,17 +97,18 @@ function create() {
 function update(time) {
     if (raceFinished) return;
 
-    // --- TERRAIN PIXEL DETECTION (Grass & Dirt) ---
+    // --- TERRAIN PIXEL DETECTION ---
     let pixel = new Phaser.Display.Color();
     try {
         trackTextureCanvas.getPixel(Math.floor(playerCar.x), Math.floor(playerCar.y), pixel);
         
+        // If the pixel is green (grass) or brownish (dirt)
         if (pixel.g > 100 || (pixel.r > 150 && pixel.g > 120)) {
-            // OFF TRACK (Grass/Sand): Slow down
-            playerCar.body.setDrag(800);
-            playerCar.body.setMaxVelocity(250);
+            // OFF TRACK: Massive penalty, car bogs down
+            playerCar.body.setDrag(1200);
+            playerCar.body.setMaxVelocity(150);
         } else {
-            // ON ASPHALT: Full speed
+            // ON ASPHALT: Fast arcade racing
             playerCar.body.setDrag(150);
             playerCar.body.setMaxVelocity(600);
         }
@@ -143,13 +132,15 @@ function update(time) {
     }
 
     // --- LAP TRACKING LOGIC ---
+    // 1. Must drive to the top half of the track to hit the hidden checkpoint
     if (playerCar.y < 350) {
         checkpointReached = true;
     }
 
-    if (checkpointReached && playerCar.x < startLineX && playerCar.x > startLineX - 20 && playerCar.y > 650) {
+    // 2. Must cross the checkered line (around X: 820, Y: > 720) with the checkpoint triggered
+    if (checkpointReached && playerCar.x <= 820 && playerCar.y > 720) {
         laps++;
-        checkpointReached = false;
+        checkpointReached = false; // Reset so it doesn't double-count
         
         if (laps > maxLaps) {
             raceFinished = true;
