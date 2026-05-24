@@ -31,7 +31,7 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
-// NEW: hidden player waypoint tracking for accurate race position
+// Hidden player waypoint tracking for accurate race position
 let playerTargetWP = 2;
 let playerTrackProgress = 0;
 
@@ -155,7 +155,6 @@ function generateCarSprite(scene, keyName, mainColor) {
     carGen.generateTexture(keyName, 25, 20);
 }
 
-// NEW: progress score based on lap + waypoint index + distance to next waypoint
 function getProgressScore(lapNumber, targetWP, x, y) {
     let target = waypoints[targetWP];
     let previousWP = targetWP - 1;
@@ -193,7 +192,6 @@ function getProgressScore(lapNumber, targetWP, x, y) {
     return ((lapNumber - 1) * waypoints.length) + previousWP + segmentProgress;
 }
 
-// NEW: invisible player waypoint tracker for ranking only
 function updatePlayerTrackProgress() {
     let target = waypoints[playerTargetWP];
 
@@ -204,7 +202,7 @@ function updatePlayerTrackProgress() {
         target.y
     );
 
-    // Larger than CPU radius because the player may not follow the exact AI line
+    // Larger than CPU radius because player may not follow exact AI line
     if (dist < 120) {
         playerTargetWP++;
 
@@ -219,6 +217,18 @@ function updatePlayerTrackProgress() {
         playerCar.x,
         playerCar.y
     );
+}
+
+function safeShowRacePrompt(text, isGo = false) {
+    if (typeof showRacePrompt === "function") {
+        showRacePrompt(text, isGo);
+    }
+}
+
+function safeHideRacePrompt() {
+    if (typeof hideRacePrompt === "function") {
+        hideRacePrompt();
+    }
 }
 
 function create() {
@@ -266,7 +276,6 @@ function create() {
         cpu.checkpointReached = false;
         cpu.prevX = cpu.x;
 
-        // NEW: progress/finish tracking
         cpu.trackProgress = 0;
         cpu.finished = false;
         cpu.finishTime = null;
@@ -306,7 +315,7 @@ function create() {
 
     this.physics.add.collider(playerCar, cpuGroup);
 
-    // CPU cars should not hard-collide with each other.
+    // CPU cars should not hard-collide with each other
     this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
@@ -341,18 +350,33 @@ function create() {
     bindBtn('btn-gas', () => mobileGas = true, () => mobileGas = false);
     bindBtn('btn-brake', () => mobileBrake = true, () => mobileBrake = false);
 
+    // --- START LIGHTS + PROMPT ---
     let lightStep = 0;
+
+    safeShowRacePrompt("YOU ARE THE RED CAR");
 
     let lightInterval = setInterval(() => {
         lightStep++;
 
         if (lightStep <= 5) {
             document.getElementById(`light-${lightStep}`).classList.add('on');
+
+            if (lightStep <= 2) {
+                safeShowRacePrompt("YOU ARE THE RED CAR");
+            } else {
+                safeShowRacePrompt("GET READY");
+            }
         } else {
             clearInterval(lightInterval);
 
             document.querySelectorAll('.light').forEach(l => l.classList.remove('on'));
             document.getElementById('start-lights').style.display = 'none';
+
+            safeShowRacePrompt("GO!", true);
+
+            setTimeout(() => {
+                safeHideRacePrompt();
+            }, 900);
 
             raceStarted = true;
             startTime = this.time.now;
@@ -361,7 +385,6 @@ function create() {
     }, 1000);
 }
 
-// FIXED: position is now based on actual progress around the waypoint path
 function calculatePlayerPosition() {
     let playerScore = playerTrackProgress;
     let rank = 1;
@@ -467,7 +490,7 @@ function update(time) {
             cpu.y
         );
 
-        // Offset target sideways so cars do not all aim at the exact same pixel.
+        // Offset target sideways so cars do not all aim at the exact same pixel
         let nextWP = waypoints[(cpu.targetWP + 1) % waypoints.length];
 
         let pathAngle = Phaser.Math.Angle.Between(
@@ -601,7 +624,7 @@ function update(time) {
         playerCar.body.velocity
     );
 
-    // NEW: update player progress every frame for accurate rank
+    // Update player progress every frame for accurate rank
     updatePlayerTrackProgress();
 
     // --- PLAYER LAP LOGIC ---
