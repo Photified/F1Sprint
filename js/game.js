@@ -89,18 +89,20 @@ const waypoints = [
     {x: 825, y: 430},
     {x: 800, y: 500},
     {x: 825, y: 560},
-    {x: 910, y: 605},
-    {x: 1045, y: 625},
+
+    // Right inner loop exit: moved farther right
+    {x: 925, y: 605},
+    {x: 1065, y: 625},
+    {x: 1195, y: 615},
 
     // Stay higher before final corner
-    {x: 1175, y: 600},
-    {x: 1300, y: 585},
-    {x: 1410, y: 585},
+    {x: 1315, y: 590},
+    {x: 1425, y: 575},
 
     // Final corner: higher entry before turning down
-    {x: 1490, y: 610},
-    {x: 1530, y: 665},
-    {x: 1530, y: 725},
+    {x: 1500, y: 590},
+    {x: 1535, y: 650},
+    {x: 1530, y: 720},
     {x: 1485, y: 775},
     {x: 1375, y: 792}
 ];
@@ -185,10 +187,7 @@ function create() {
         cpu.baseSpeed = speed;
         cpu.speed = speed;
 
-        // Different AI lanes so they do not all target the same exact pixel.
         cpu.laneOffset = laneOffset;
-
-        // Small launch delay so they do not all pile into each other.
         cpu.startDelay = startDelay;
 
         cpu.laps = 1;
@@ -360,8 +359,6 @@ function update(time) {
             target.y
         );
 
-        // This is the waypoint radius.
-        // Smaller means they must actually reach the waypoint before advancing.
         if (dist < 28) {
             cpu.targetWP++;
 
@@ -397,7 +394,6 @@ function update(time) {
 
         let angleDiff = Phaser.Math.Angle.Wrap(targetAngle - cpu.rotation);
 
-        // Dynamic turning.
         let turnSpeed = 0.12;
 
         if (Math.abs(angleDiff) > 1.0) {
@@ -412,15 +408,12 @@ function update(time) {
             turnSpeed
         );
 
-        // Dynamic speed.
         let targetSpeed = cpu.baseSpeed || cpu.speed;
 
-        // Staggered launch.
         if (time - startTime < cpu.startDelay) {
             targetSpeed = 0;
         }
 
-        // Slow down harder for corners so they do not cut.
         if (Math.abs(angleDiff) > 0.8) {
             targetSpeed *= 0.48;
         } else if (Math.abs(angleDiff) > 0.4) {
