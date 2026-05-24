@@ -92,7 +92,7 @@ function update(time) {
 
         if (a === 0) {
             playerCar.body.setDrag(800); 
-            playerCar.body.setMaxVelocity(350); // SLOWED DOWN (was 550)
+            playerCar.body.setMaxVelocity(350); 
             prevX = playerCar.x; prevY = playerCar.y;
         } 
         else if (r < 100 && g < 100 && b < 100) {
@@ -103,12 +103,12 @@ function update(time) {
         } 
         else if (r > 100 && g < 100 && b < 100) {
             playerCar.body.setDrag(2500);
-            playerCar.body.setMaxVelocity(80); // GRASS IS SLOWER NOW
+            playerCar.body.setMaxVelocity(80); 
             prevX = playerCar.x; prevY = playerCar.y;
         } 
         else {
             playerCar.body.setDrag(800); 
-            playerCar.body.setMaxVelocity(350); // SLOWED DOWN (was 550)
+            playerCar.body.setMaxVelocity(350); 
             prevX = playerCar.x; prevY = playerCar.y;
         }
     }
@@ -116,11 +116,9 @@ function update(time) {
     // --- CONTROLS ---
     playerCar.body.setAngularVelocity(0);
     
-    // SLOWER STEERING (was 320, now 200)
     if (cursors.left.isDown || mobileLeft) playerCar.body.setAngularVelocity(-200);
     else if (cursors.right.isDown || mobileRight) playerCar.body.setAngularVelocity(200);
 
-    // SLOWER ACCELERATION (was 2500, now 1200)
     if (cursors.up.isDown || mobileGas) {
         this.physics.velocityFromRotation(playerCar.rotation, 1200, playerCar.body.acceleration);
     } else if (cursors.down.isDown || mobileBrake) {
