@@ -82,18 +82,20 @@ const waypoints = [
     {x: 1310, y: 370},
     {x: 1190, y: 370},
 
-    // Right inner loop: higher and farther left before turn-in
+    // Right inner loop: high/left entry, sharp right-side turn
     {x: 1120, y: 350},
     {x: 1000, y: 350},
     {x: 900, y: 375},
-    {x: 825, y: 430},
-    {x: 800, y: 500},
-    {x: 825, y: 560},
 
-    // Right inner loop exit: higher and farther right
-    {x: 930, y: 585},
-    {x: 1075, y: 600},
-    {x: 1215, y: 590},
+    // Mid-corner moved right so the car turns sharper
+    {x: 860, y: 430},
+    {x: 875, y: 500},
+    {x: 930, y: 560},
+
+    // Exit moved higher and farther right
+    {x: 1035, y: 585},
+    {x: 1165, y: 585},
+    {x: 1265, y: 575},
 
     // Stay high before final corner
     {x: 1325, y: 565},
