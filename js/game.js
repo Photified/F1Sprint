@@ -32,31 +32,18 @@ let maxSpeed = 450;
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
 // --- HIGH-DENSITY RACING LINE ---
-// 40 tightly packed breadcrumbs to force the AI to stay on the asphalt
 const waypoints = [
-    // Bottom straight (left)
     {x: 1300, y: 835}, {x: 800, y: 835}, {x: 350, y: 835},
-    // Turn 1 (bottom left)
     {x: 200, y: 820}, {x: 120, y: 770}, {x: 100, y: 710}, {x: 120, y: 640}, {x: 200, y: 590},
-    // Middle straight (right)
     {x: 350, y: 580}, {x: 650, y: 580},
-    // S-Curve (up)
     {x: 750, y: 560}, {x: 820, y: 480}, {x: 750, y: 400},
-    // Upper middle straight (left)
     {x: 650, y: 380}, {x: 350, y: 380},
-    // Turn 2 (top left)
     {x: 200, y: 360}, {x: 120, y: 310}, {x: 100, y: 260}, {x: 120, y: 190}, {x: 200, y: 150},
-    // Top straight (right)
     {x: 350, y: 140}, {x: 800, y: 140}, {x: 1300, y: 140},
-    // Turn 3 (top right)
     {x: 1400, y: 150}, {x: 1480, y: 200}, {x: 1500, y: 260}, {x: 1480, y: 330}, {x: 1400, y: 370},
-    // Chicane entry (left)
     {x: 1300, y: 380}, {x: 1150, y: 390},
-    // Chicane middle (down)
     {x: 1050, y: 440}, {x: 1000, y: 500}, {x: 1050, y: 560},
-    // Chicane exit (right)
     {x: 1150, y: 610}, {x: 1300, y: 620},
-    // Turn 4 (bottom right)
     {x: 1400, y: 630}, {x: 1480, y: 690}, {x: 1500, y: 750}, {x: 1480, y: 810}, {x: 1400, y: 830}
 ];
 
@@ -119,7 +106,7 @@ function create() {
     
     const spawnCPU = (x, y, color, speed) => {
         let cpu = cpuGroup.create(x, y, color);
-        cpu.targetWP = 2; // Point them towards turn 1
+        cpu.targetWP = 2; 
         cpu.speed = speed;
         cpu.laps = 1;
         cpu.checkpointReached = false;
@@ -131,22 +118,20 @@ function create() {
         cpu.body.setMass(1.5); 
     };
 
-    // --- TIGHTENED 8-CAR GRID ---
-    // Y coordinates pushed together (790 and 835) to fit the boxes
-    // Column 1
-    spawnCPU(870, 790, 'car-blue', 400);   
-    spawnCPU(870, 835, 'car-yellow', 390); 
-    // Column 2
-    spawnCPU(970, 790, 'car-green', 380);  
-    spawnCPU(970, 835, 'car-purple', 370); 
-    // Column 3
-    spawnCPU(1070, 790, 'car-orange', 360); 
-    spawnCPU(1070, 835, 'car-cyan', 350);   
-    // Column 4
-    spawnCPU(1170, 790, 'car-pink', 340);  
+    // --- ALIGNED & STAGGERED 8-CAR GRID ---
+    // Top Row (Shifted up to 782)
+    spawnCPU(870, 782, 'car-blue', 400);   // 1st
+    spawnCPU(970, 782, 'car-green', 380);  // 3rd
+    spawnCPU(1070, 782, 'car-orange', 360);// 5th
+    spawnCPU(1170, 782, 'car-pink', 340);  // 7th
 
-    // PLAYER - Grid 8 (Dead Last, bottom right box)
-    playerCar = this.physics.add.sprite(1170, 835, 'car-red');
+    // Bottom Row (Shifted up to 828, and staggered right +30px)
+    spawnCPU(900, 828, 'car-yellow', 390); // 2nd
+    spawnCPU(1000, 828, 'car-purple', 370);// 4th
+    spawnCPU(1100, 828, 'car-cyan', 350);  // 6th
+
+    // PLAYER - Grid 8 (Dead Last)
+    playerCar = this.physics.add.sprite(1200, 828, 'car-red');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setCollideWorldBounds(true);
@@ -261,8 +246,6 @@ function update(time) {
         }
 
         let targetAngle = Phaser.Math.Angle.Between(cpu.x, cpu.y, target.x, target.y);
-        
-        // Increased steering speed so they snap to the dots tighter and don't drift into grass
         cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.2);
         this.physics.velocityFromRotation(cpu.rotation, cpu.speed, cpu.body.velocity);
 
