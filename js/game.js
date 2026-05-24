@@ -31,20 +31,31 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
-// --- HIGH-DENSITY RACING LINE ---
+// --- PERFECTED YELLOW RACING LINE ---
+// High density points around the curves so they don't shortcut over the grass.
 const waypoints = [
-    {x: 1300, y: 835}, {x: 800, y: 835}, {x: 350, y: 835},
-    {x: 200, y: 820}, {x: 120, y: 770}, {x: 100, y: 710}, {x: 120, y: 640}, {x: 200, y: 590},
-    {x: 350, y: 580}, {x: 650, y: 580},
-    {x: 750, y: 560}, {x: 820, y: 480}, {x: 750, y: 400},
-    {x: 650, y: 380}, {x: 350, y: 380},
-    {x: 200, y: 360}, {x: 120, y: 310}, {x: 100, y: 260}, {x: 120, y: 190}, {x: 200, y: 150},
-    {x: 350, y: 140}, {x: 800, y: 140}, {x: 1300, y: 140},
-    {x: 1400, y: 150}, {x: 1480, y: 200}, {x: 1500, y: 260}, {x: 1480, y: 330}, {x: 1400, y: 370},
-    {x: 1300, y: 380}, {x: 1150, y: 390},
-    {x: 1050, y: 440}, {x: 1000, y: 500}, {x: 1050, y: 560},
-    {x: 1150, y: 610}, {x: 1300, y: 620},
-    {x: 1400, y: 630}, {x: 1480, y: 690}, {x: 1500, y: 750}, {x: 1480, y: 810}, {x: 1400, y: 830}
+    // Start line to turn 1
+    {x: 800, y: 830}, {x: 600, y: 830}, {x: 400, y: 830}, {x: 300, y: 830},
+    // Turn 1 (Bottom Left)
+    {x: 200, y: 810}, {x: 140, y: 760}, {x: 115, y: 680}, {x: 140, y: 610}, {x: 200, y: 585}, {x: 300, y: 580},
+    // Middle straight
+    {x: 500, y: 580}, {x: 700, y: 580},
+    // S-Curve
+    {x: 770, y: 550}, {x: 810, y: 480}, {x: 770, y: 410}, {x: 700, y: 380},
+    // Top Middle Straight
+    {x: 500, y: 380}, {x: 300, y: 380},
+    // Turn 2 (Top Left)
+    {x: 200, y: 365}, {x: 140, y: 320}, {x: 115, y: 240}, {x: 140, y: 170}, {x: 200, y: 145}, {x: 300, y: 140},
+    // Top Straight
+    {x: 600, y: 140}, {x: 1000, y: 140}, {x: 1300, y: 140},
+    // Turn 3 (Top Right)
+    {x: 1400, y: 160}, {x: 1460, y: 210}, {x: 1485, y: 280}, {x: 1440, y: 350}, {x: 1350, y: 380},
+    // Chicane
+    {x: 1250, y: 395}, {x: 1150, y: 430}, {x: 1080, y: 470}, {x: 1060, y: 500}, {x: 1080, y: 540}, {x: 1150, y: 580}, {x: 1250, y: 610}, {x: 1350, y: 620},
+    // Turn 4 (Bottom Right)
+    {x: 1440, y: 650}, {x: 1485, y: 720}, {x: 1460, y: 790}, {x: 1400, y: 820}, {x: 1300, y: 830},
+    // Back to start
+    {x: 1100, y: 830}, {x: 900, y: 830}
 ];
 
 function formatTime(msTime) {
@@ -106,7 +117,8 @@ function create() {
     
     const spawnCPU = (x, y, color, speed) => {
         let cpu = cpuGroup.create(x, y, color);
-        cpu.targetWP = 2; 
+        // Start aiming at index 1 ({x: 600, y: 830}) so they pull straight off the grid
+        cpu.targetWP = 1; 
         cpu.speed = speed;
         cpu.laps = 1;
         cpu.checkpointReached = false;
@@ -118,7 +130,7 @@ function create() {
         cpu.body.setMass(1.5); 
     };
 
-    // --- ALIGNED & STAGGERED 8-CAR GRID (Moved UP 15px) ---
+    // --- ALIGNED & STAGGERED 8-CAR GRID ---
     // Top Row
     spawnCPU(870, 767, 'car-blue', 400);   // 1st
     spawnCPU(970, 767, 'car-green', 380);  // 3rd
@@ -239,14 +251,17 @@ function update(time) {
         let target = waypoints[cpu.targetWP];
         let dist = Phaser.Math.Distance.Between(cpu.x, cpu.y, target.x, target.y);
         
-        if (dist < 80) {
+        // REDUCED TO 50! Now they have to stay much closer to the yellow line before aiming for the next point
+        if (dist < 50) {
             cpu.targetWP++;
             if (cpu.targetWP >= waypoints.length) cpu.targetWP = 0; 
             target = waypoints[cpu.targetWP];
         }
 
         let targetAngle = Phaser.Math.Angle.Between(cpu.x, cpu.y, target.x, target.y);
-        cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.2);
+        
+        // Slightly sharper steering to keep them rigidly on the line
+        cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.25);
         this.physics.velocityFromRotation(cpu.rotation, cpu.speed, cpu.body.velocity);
 
         if (cpu.y < 350) cpu.checkpointReached = true;
