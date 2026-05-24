@@ -25,6 +25,14 @@
         <button id="btn-help" title="Help">⚙️</button>
     </div>
 
+    <div id="start-lights">
+        <div class="light" id="light-1"></div>
+        <div class="light" id="light-2"></div>
+        <div class="light" id="light-3"></div>
+        <div class="light" id="light-4"></div>
+        <div class="light" id="light-5"></div>
+    </div>
+
     <div id="game-wrapper">
         <div class="side-controls left-controls">
             <button id="btn-brake">BRK</button>
@@ -49,16 +57,30 @@
             <button id="btn-install">Install App</button>
         </div>
     </div>
+
+    <div id="results-modal">
+        <h1 style="font-size: 40px; margin: 0; color: #fff;">🏁 FINISH 🏁</h1>
+        <h2 id="res-position" style="color: #e10600; font-size: 28px;">POSITION: 1st</h2>
+        <div class="results-stats">
+            <p>FINAL TIME: <span id="res-final">--:--.---</span></p>
+            <p>BEST LAP: <span id="res-best">--:--.---</span></p>
+        </div>
+        <button id="btn-restart">Play Again</button>
+    </div>
     
     <script src="js/game.js"></script>
     
     <script>
         const helpBtn = document.getElementById('btn-help');
         const closeBtn = document.getElementById('btn-close');
-        const modal = document.getElementById('help-modal');
+        const helpModal = document.getElementById('help-modal');
 
-        helpBtn.addEventListener('click', () => modal.classList.add('show'));
-        closeBtn.addEventListener('click', () => modal.classList.remove('show'));
+        helpBtn.addEventListener('click', () => helpModal.classList.add('show'));
+        closeBtn.addEventListener('click', () => helpModal.classList.remove('show'));
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            location.reload(); 
+        });
 
         let deferredPrompt;
         const installBtn = document.getElementById('btn-install');
