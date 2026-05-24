@@ -31,6 +31,10 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
+// NEW: hidden player waypoint tracking for accurate race position
+let playerTargetWP = 2;
+let playerTrackProgress = 0;
+
 // --- RACING LINE ---
 const waypoints = [
     // Bottom straight
@@ -151,6 +155,72 @@ function generateCarSprite(scene, keyName, mainColor) {
     carGen.generateTexture(keyName, 25, 20);
 }
 
+// NEW: progress score based on lap + waypoint index + distance to next waypoint
+function getProgressScore(lapNumber, targetWP, x, y) {
+    let target = waypoints[targetWP];
+    let previousWP = targetWP - 1;
+
+    if (previousWP < 0) {
+        previousWP = waypoints.length - 1;
+    }
+
+    let previous = waypoints[previousWP];
+
+    let segmentLength = Phaser.Math.Distance.Between(
+        previous.x,
+        previous.y,
+        target.x,
+        target.y
+    );
+
+    let distanceToTarget = Phaser.Math.Distance.Between(
+        x,
+        y,
+        target.x,
+        target.y
+    );
+
+    let segmentProgress = 0;
+
+    if (segmentLength > 0) {
+        segmentProgress = Phaser.Math.Clamp(
+            1 - (distanceToTarget / segmentLength),
+            0,
+            1
+        );
+    }
+
+    return ((lapNumber - 1) * waypoints.length) + previousWP + segmentProgress;
+}
+
+// NEW: invisible player waypoint tracker for ranking only
+function updatePlayerTrackProgress() {
+    let target = waypoints[playerTargetWP];
+
+    let dist = Phaser.Math.Distance.Between(
+        playerCar.x,
+        playerCar.y,
+        target.x,
+        target.y
+    );
+
+    // Larger than CPU radius because the player may not follow the exact AI line
+    if (dist < 120) {
+        playerTargetWP++;
+
+        if (playerTargetWP >= waypoints.length) {
+            playerTargetWP = 0;
+        }
+    }
+
+    playerTrackProgress = getProgressScore(
+        laps,
+        playerTargetWP,
+        playerCar.x,
+        playerCar.y
+    );
+}
+
 function create() {
     bestLapTime = parseFloat(localStorage.getItem('f1_bestLap')) || Infinity;
     bestRaceTime = parseFloat(localStorage.getItem('f1_bestRace')) || Infinity;
@@ -195,6 +265,11 @@ function create() {
         cpu.laps = 1;
         cpu.checkpointReached = false;
         cpu.prevX = cpu.x;
+
+        // NEW: progress/finish tracking
+        cpu.trackProgress = 0;
+        cpu.finished = false;
+        cpu.finishTime = null;
 
         cpu.setDepth(10);
         cpu.angle = 180;
@@ -286,18 +361,22 @@ function create() {
     }, 1000);
 }
 
+// FIXED: position is now based on actual progress around the waypoint path
 function calculatePlayerPosition() {
+    let playerScore = playerTrackProgress;
     let rank = 1;
 
     cpuGroup.children.iterate((cpu) => {
-        if (cpu.laps > laps) {
+        if (!cpu) return;
+
+        let cpuScore = cpu.trackProgress || 0;
+
+        if (cpu.finished) {
+            cpuScore = maxLaps * waypoints.length;
+        }
+
+        if (cpuScore > playerScore) {
             rank++;
-        } else if (cpu.laps === laps) {
-            if (cpu.checkpointReached && !checkpointReached) {
-                rank++;
-            } else if (cpu.checkpointReached && checkpointReached) {
-                if (cpu.x < playerCar.x) rank++;
-            }
         }
     });
 
@@ -315,6 +394,10 @@ function triggerRaceFinish(time) {
     cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
 
     let totalRaceTime = time - startTime;
+
+    // Force player score to completed race before calculating result
+    playerTrackProgress = maxLaps * waypoints.length;
+
     let finalRank = calculatePlayerPosition();
 
     let suffix = "th";
@@ -352,6 +435,11 @@ function update(time) {
 
     // --- CPU AI LOGIC ---
     cpuGroup.children.iterate((cpu) => {
+        if (cpu.finished) {
+            cpu.body.setVelocity(0);
+            return;
+        }
+
         let target = waypoints[cpu.targetWP];
 
         let dist = Phaser.Math.Distance.Between(
@@ -370,6 +458,14 @@ function update(time) {
 
             target = waypoints[cpu.targetWP];
         }
+
+        // Update CPU progress for position calculation
+        cpu.trackProgress = getProgressScore(
+            cpu.laps,
+            cpu.targetWP,
+            cpu.x,
+            cpu.y
+        );
 
         // Offset target sideways so cars do not all aim at the exact same pixel.
         let nextWP = waypoints[(cpu.targetWP + 1) % waypoints.length];
@@ -443,7 +539,10 @@ function update(time) {
             cpu.checkpointReached = false;
 
             if (cpu.laps > maxLaps) {
-                triggerRaceFinish(time);
+                cpu.finished = true;
+                cpu.finishTime = time;
+                cpu.trackProgress = maxLaps * waypoints.length;
+                cpu.body.setVelocity(0);
             }
         }
 
@@ -501,6 +600,9 @@ function update(time) {
         currentSpeed,
         playerCar.body.velocity
     );
+
+    // NEW: update player progress every frame for accurate rank
+    updatePlayerTrackProgress();
 
     // --- PLAYER LAP LOGIC ---
     if (playerCar.y < 350) {
