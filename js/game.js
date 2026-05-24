@@ -31,15 +31,33 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
-// --- WIDENED & CENTERED RACING LINE ---
+// --- HIGH-DENSITY RACING LINE ---
+// 40 tightly packed breadcrumbs to force the AI to stay on the asphalt
 const waypoints = [
-    {x: 1200, y: 810}, {x: 800, y: 810}, {x: 350, y: 810}, {x: 200, y: 770}, 
-    {x: 150, y: 700}, {x: 200, y: 620}, {x: 350, y: 590}, {x: 650, y: 590}, 
-    {x: 750, y: 540}, {x: 750, y: 440}, {x: 650, y: 390}, {x: 350, y: 390}, 
-    {x: 200, y: 350}, {x: 150, y: 260}, {x: 200, y: 170}, {x: 350, y: 140}, 
-    {x: 1200, y: 140}, {x: 1350, y: 170}, {x: 1450, y: 260}, {x: 1350, y: 360}, 
-    {x: 1250, y: 390}, {x: 1080, y: 420}, {x: 1020, y: 500}, {x: 1080, y: 580}, 
-    {x: 1250, y: 610}, {x: 1400, y: 640}, {x: 1450, y: 740}, {x: 1350, y: 810}
+    // Bottom straight (left)
+    {x: 1300, y: 835}, {x: 800, y: 835}, {x: 350, y: 835},
+    // Turn 1 (bottom left)
+    {x: 200, y: 820}, {x: 120, y: 770}, {x: 100, y: 710}, {x: 120, y: 640}, {x: 200, y: 590},
+    // Middle straight (right)
+    {x: 350, y: 580}, {x: 650, y: 580},
+    // S-Curve (up)
+    {x: 750, y: 560}, {x: 820, y: 480}, {x: 750, y: 400},
+    // Upper middle straight (left)
+    {x: 650, y: 380}, {x: 350, y: 380},
+    // Turn 2 (top left)
+    {x: 200, y: 360}, {x: 120, y: 310}, {x: 100, y: 260}, {x: 120, y: 190}, {x: 200, y: 150},
+    // Top straight (right)
+    {x: 350, y: 140}, {x: 800, y: 140}, {x: 1300, y: 140},
+    // Turn 3 (top right)
+    {x: 1400, y: 150}, {x: 1480, y: 200}, {x: 1500, y: 260}, {x: 1480, y: 330}, {x: 1400, y: 370},
+    // Chicane entry (left)
+    {x: 1300, y: 380}, {x: 1150, y: 390},
+    // Chicane middle (down)
+    {x: 1050, y: 440}, {x: 1000, y: 500}, {x: 1050, y: 560},
+    // Chicane exit (right)
+    {x: 1150, y: 610}, {x: 1300, y: 620},
+    // Turn 4 (bottom right)
+    {x: 1400, y: 630}, {x: 1480, y: 690}, {x: 1500, y: 750}, {x: 1480, y: 810}, {x: 1400, y: 830}
 ];
 
 function formatTime(msTime) {
@@ -88,7 +106,6 @@ function create() {
     ctx.drawImage(srcMask, 0, 0, 1600, 900);
     maskData = ctx.getImageData(0, 0, 1600, 900).data;
 
-    // GENERATE 8 CAR COLORS
     generateCarSprite(this, 'car-red', 0xe10600);    
     generateCarSprite(this, 'car-blue', 0x0055ff);   
     generateCarSprite(this, 'car-yellow', 0xffcc00); 
@@ -114,21 +131,22 @@ function create() {
         cpu.body.setMass(1.5); 
     };
 
-    // --- ALIGNED 8-CAR GRID ---
-    // Column 1 (Closest to line)
-    spawnCPU(880, 760, 'car-blue', 400);   
-    spawnCPU(880, 840, 'car-yellow', 390); 
+    // --- TIGHTENED 8-CAR GRID ---
+    // Y coordinates pushed together (790 and 835) to fit the boxes
+    // Column 1
+    spawnCPU(870, 790, 'car-blue', 400);   
+    spawnCPU(870, 835, 'car-yellow', 390); 
     // Column 2
-    spawnCPU(980, 760, 'car-green', 380);  
-    spawnCPU(980, 840, 'car-purple', 370); 
+    spawnCPU(970, 790, 'car-green', 380);  
+    spawnCPU(970, 835, 'car-purple', 370); 
     // Column 3
-    spawnCPU(1080, 760, 'car-orange', 360); 
-    spawnCPU(1080, 840, 'car-cyan', 350);   
-    // Column 4 (Back row)
-    spawnCPU(1180, 760, 'car-pink', 340);  
+    spawnCPU(1070, 790, 'car-orange', 360); 
+    spawnCPU(1070, 835, 'car-cyan', 350);   
+    // Column 4
+    spawnCPU(1170, 790, 'car-pink', 340);  
 
     // PLAYER - Grid 8 (Dead Last, bottom right box)
-    playerCar = this.physics.add.sprite(1180, 840, 'car-red');
+    playerCar = this.physics.add.sprite(1170, 835, 'car-red');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setCollideWorldBounds(true);
@@ -244,8 +262,8 @@ function update(time) {
 
         let targetAngle = Phaser.Math.Angle.Between(cpu.x, cpu.y, target.x, target.y);
         
-        // INCREASED AI STEERING SPEED: Now turns sharper to avoid outside walls!
-        cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.15);
+        // Increased steering speed so they snap to the dots tighter and don't drift into grass
+        cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.2);
         this.physics.velocityFromRotation(cpu.rotation, cpu.speed, cpu.body.velocity);
 
         if (cpu.y < 350) cpu.checkpointReached = true;
