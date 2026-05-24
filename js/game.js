@@ -10,8 +10,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: { 
-            // 🚨 KEEP THIS TRUE FOR NOW to see your invisible collision boxes! 
-            // Change to 'false' when you are done adjusting the walls.
+            // Purple debug boxes are ON
             debug: true 
         }
     },
@@ -24,51 +23,48 @@ let playerCar;
 let cursors;
 let trackWalls;
 
-// Race state variables
 let startTime = 0;
 let laps = 0;
 let maxLaps = 3;
 let checkpointReached = false;
 let raceFinished = false;
 
-// Custom start line coordinate based on your image
 let startLineX = 725; 
 let trackTextureCanvas;
 
 function preload() {
-    // 1. Loading the exact PNG file
-    this.load.image('trackImg', 'track.png');
+    // Make sure this matches your file name exactly (case-sensitive on GitHub!)
+    this.load.image('trackImg', 'track.jpg'); 
 }
 
 function create() {
     startTime = this.time.now;
 
-    // Center the image in the 1600x900 canvas
+    // Center the background image
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // Create hidden canvas for pixel color reading (grass detection)
+    // CRITICAL FIX: Safe way to read the image pixels without crashing the browser
     trackTextureCanvas = this.textures.createCanvas('trackPixelMap', 1600, 900);
-    trackTextureCanvas.draw(0, 0, bg);
+    let srcImg = this.textures.get('trackImg').getSourceImage();
+    trackTextureCanvas.context.drawImage(srcImg, 0, 0, 1600, 900);
 
     // ==========================================
     // 1. INVISIBLE PHYSICS WALLS
     // ==========================================
     trackWalls = this.physics.add.staticGroup();
 
-    // FORMAT: {x, y, w, h} -> X and Y are the exact CENTER point of the rectangle
     const wallData = [
-        // Screen Edges (Keeps car on the screen)
+        // Outer Screen Edges
         { x: 800, y: -25, w: 1600, h: 50 }, 
         { x: 800, y: 925, w: 1600, h: 50 }, 
         { x: -25, y: 450, w: 50, h: 900 },  
         { x: 1625, y: 450, w: 50, h: 900 }, 
 
-        // Main middle islands to block corner cutting
-        // Tweak these numbers while looking at the purple debug boxes in your browser!
-        { x: 400, y: 550, w: 550, h: 100 },  // Bottom Left inner island
-        { x: 1200, y: 400, w: 550, h: 150 }, // Right side inner island
-        { x: 800, y: 250, w: 400, h: 150 },  // Top middle spectator area
+        // Inner Islands (Tweak these numbers!)
+        { x: 400, y: 550, w: 550, h: 100 }, 
+        { x: 1200, y: 400, w: 550, h: 150 },
+        { x: 800, y: 250, w: 400, h: 150 }, 
     ];
 
     wallData.forEach(wall => {
@@ -100,8 +96,8 @@ function create() {
     // ==========================================
     // 3. SPAWN PLAYER ON THE GRID
     // ==========================================
-    // Spawning on your specific grid slots, facing LEFT (clockwise track)
-    playerCar = this.physics.add.sprite(900, 770, 'f1-sprite');
+    // Adjusted to spawn at the bottom grid, facing LEFT
+    playerCar = this.physics.add.sprite(820, 810, 'f1-sprite');
     playerCar.angle = 180; 
     playerCar.body.setBounce(0.4); 
     playerCar.body.setCollideWorldBounds(true);
@@ -118,13 +114,12 @@ function update(time) {
     try {
         trackTextureCanvas.getPixel(Math.floor(playerCar.x), Math.floor(playerCar.y), pixel);
         
-        // Checks if the pixel has a lot of Green (grass) OR brownish/tan (dirt edges)
         if (pixel.g > 100 || (pixel.r > 150 && pixel.g > 120)) {
-            // 🚨 OFF TRACK: Severe slowdown
+            // OFF TRACK
             playerCar.body.setDrag(800);
             playerCar.body.setMaxVelocity(250);
         } else {
-            // 🏁 ON ASPHALT: Full speed
+            // ON ASPHALT
             playerCar.body.setDrag(150);
             playerCar.body.setMaxVelocity(600);
         }
@@ -147,13 +142,11 @@ function update(time) {
         playerCar.body.setAcceleration(0);
     }
 
-    // --- LAP TRACKING LOGIC (Clockwise) ---
-    // Checkpoint at the top of the track so they can't reverse over the start line
+    // --- LAP TRACKING LOGIC ---
     if (playerCar.y < 350) {
         checkpointReached = true;
     }
 
-    // If checkpoint is hit AND car crosses the start line moving RIGHT-to-LEFT
     if (checkpointReached && playerCar.x < startLineX && playerCar.x > startLineX - 20 && playerCar.y > 650) {
         laps++;
         checkpointReached = false;
