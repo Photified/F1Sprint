@@ -1,34 +1,30 @@
-const CACHE_NAME = 'f1-sprint-v1';
+// BUMPED TO V2 TO FORCE UPDATE ON PHONES
+const CACHE_NAME = 'f1-sprint-v2';
 
-// List of local files we want to cache for offline play
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './manifest.json',
-    './js/game.js'
+    './js/game.js',
+    './track.png',
+    './mask.png'
 ];
 
-// 1. Install Event: Opens the cache and adds our assets
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(CACHE_NAME)
-        .then(cache => {
-            console.log('Opened cache');
+        caches.open(CACHE_NAME).then(cache => {
             return cache.addAll(ASSETS_TO_CACHE);
-        })
-        .then(() => self.skipWaiting())
+        }).then(() => self.skipWaiting())
     );
 });
 
-// 2. Activate Event: Cleans up any old versions of the cache if we update the app
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheName !== CACHE_NAME) {
-                        console.log('Clearing old cache');
                         return caches.delete(cacheName);
                     }
                 })
@@ -37,19 +33,11 @@ self.addEventListener('activate', event => {
     );
 });
 
-// 3. Fetch Event: Intercepts network requests and serves from cache first
 self.addEventListener('fetch', event => {
-    // We only want to handle GET requests
     if (event.request.method !== 'GET') return;
-
     event.respondWith(
-        caches.match(event.request)
-        .then(response => {
-            // Return the cached version if we have it, otherwise fetch from the network
+        caches.match(event.request).then(response => {
             return response || fetch(event.request);
-        })
-        .catch(() => {
-            console.log('Offline and asset not cached:', event.request.url);
-        })
+        }).catch(() => console.log('Offline and asset not cached:', event.request.url))
     );
 });
