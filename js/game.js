@@ -1,6 +1,4 @@
-// --- DEBUG SETTING ---
-// Keep this TRUE to see the yellow string. Turn to FALSE when it looks perfect!
-const SHOW_WAYPOINTS = true; 
+const SHOW_WAYPOINTS = false; // Turned off for the clean race view!
 
 const config = {
     type: Phaser.AUTO,
@@ -18,8 +16,11 @@ let playerCar;
 let cpuGroup; 
 let cursors;
 
+// RACE STATE
+let raceStarted = false; // Blocks movement until lights go out
+let raceFinished = false;
 let startTime = 0, laps = 1, maxLaps = 3;
-let checkpointReached = false, raceFinished = false;
+let checkpointReached = false;
 
 let lapStartTime = 0;
 let bestLapTime = Infinity;
@@ -32,27 +33,12 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
-// --- FIXED CPU WAYPOINTS (The Racing Line) ---
-// I mapped these strictly to the asphalt based on your screenshot!
 const waypoints = [
-    {x: 1200, y: 830}, // Before Start Line
-    {x: 800, y: 830},  // Start line
-    {x: 250, y: 830},  // End of bottom straight
-    {x: 150, y: 720},  // Bottom left curve apex
-    {x: 250, y: 600},  // Bottom left exit
-    {x: 650, y: 600},  // Middle straight
-    {x: 800, y: 480},  // Entering S-curve
-    {x: 650, y: 380},  // Exiting S-curve
-    {x: 250, y: 380},  // Top left straight
-    {x: 150, y: 260},  // Top left hairpin apex
-    {x: 250, y: 150},  // Top left exit
-    {x: 1300, y: 150}, // End of top straight
-    {x: 1450, y: 250}, // Top right curve apex
-    {x: 1300, y: 380}, // Approaching chicane
-    {x: 1050, y: 500}, // Chicane apex
-    {x: 1250, y: 650}, // Chicane exit
-    {x: 1450, y: 750}, // Bottom right curve apex
-    {x: 1300, y: 830}  // Bottom right exit
+    {x: 1200, y: 830}, {x: 800, y: 830}, {x: 250, y: 830}, {x: 150, y: 720}, 
+    {x: 250, y: 600}, {x: 650, y: 600}, {x: 800, y: 480}, {x: 650, y: 380}, 
+    {x: 250, y: 380}, {x: 150, y: 260}, {x: 250, y: 150}, {x: 1300, y: 150}, 
+    {x: 1450, y: 250}, {x: 1300, y: 380}, {x: 1050, y: 500}, {x: 1250, y: 650}, 
+    {x: 1450, y: 750}, {x: 1300, y: 830}
 ];
 
 function formatTime(msTime) {
@@ -83,9 +69,6 @@ function generateCarSprite(scene, keyName, mainColor) {
 }
 
 function create() {
-    startTime = this.time.now;
-    lapStartTime = startTime; 
-
     bestLapTime = parseFloat(localStorage.getItem('f1_bestLap')) || Infinity;
     bestRaceTime = parseFloat(localStorage.getItem('f1_bestRace')) || Infinity;
     
@@ -95,11 +78,6 @@ function create() {
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // --- DEV TOOL: CLICK TO GET COORDINATES ---
-    this.input.on('pointerdown', function (pointer) {
-        console.log(`Clicked X: ${Math.floor(pointer.x)}, Y: ${Math.floor(pointer.y)}`);
-    });
-
     if (SHOW_WAYPOINTS) {
         let wpGraphics = this.add.graphics();
         wpGraphics.fillStyle(0xffff00, 0.8); 
@@ -128,13 +106,22 @@ function create() {
 
     cpuGroup = this.physics.add.group();
     
-    let cpu1 = cpuGroup.create(930, 790, 'car-blue'); 
-    cpu1.targetWP = 1; // Start aiming for waypoint 1
-    cpu1.speed = 360;  
+    // --- STARTING GRID SETUP ---
+    // CPU 1 (Blue) - Top grid spot
+    let cpu1 = cpuGroup.create(880, 780, 'car-blue'); 
+    cpu1.targetWP = 2; // Aim for the corner
+    cpu1.speed = 220;  // SUPER SLOW (Easy mode)
+    cpu1.laps = 1;
+    cpu1.checkpointReached = false;
+    cpu1.prevX = cpu1.x;
 
-    let cpu2 = cpuGroup.create(1000, 835, 'car-yellow'); 
-    cpu2.targetWP = 1;
-    cpu2.speed = 340; 
+    // CPU 2 (Yellow) - Middle grid spot
+    let cpu2 = cpuGroup.create(940, 835, 'car-yellow'); 
+    cpu2.targetWP = 2;
+    cpu2.speed = 200;  // EVEN SLOWER
+    cpu2.laps = 1;
+    cpu2.checkpointReached = false;
+    cpu2.prevX = cpu2.x;
 
     cpuGroup.children.iterate((cpu) => {
         cpu.setDepth(10);
@@ -144,7 +131,8 @@ function create() {
         cpu.body.setMass(1.5);   
     });
 
-    playerCar = this.physics.add.sprite(930, 835, 'car-red');
+    // Player - Front grid spot
+    playerCar = this.physics.add.sprite(880, 835, 'car-red');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setCollideWorldBounds(true);
@@ -172,10 +160,60 @@ function create() {
     bindBtn('btn-right', () => mobileRight = true, () => mobileRight = false);
     bindBtn('btn-gas', () => mobileGas = true, () => mobileGas = false);
     bindBtn('btn-brake', () => mobileBrake = true, () => mobileBrake = false);
+
+    // --- 5 LIGHT COUNTDOWN LOGIC ---
+    let lightStep = 0;
+    let lightInterval = setInterval(() => {
+        lightStep++;
+        if (lightStep <= 5) {
+            document.getElementById(`light-${lightStep}`).classList.add('on');
+        } else {
+            // Lights Out - Race Starts!
+            clearInterval(lightInterval);
+            document.querySelectorAll('.light').forEach(l => l.classList.remove('on'));
+            document.getElementById('start-lights').style.display = 'none';
+            
+            raceStarted = true;
+            startTime = this.time.now; // Timer officially starts now
+            lapStartTime = startTime;
+        }
+    }, 1000); // 1 second per light
+}
+
+// Reusable function to trigger the end of the race for everyone
+function triggerRaceFinish(winnerName, sceneTime) {
+    raceFinished = true;
+    document.getElementById('lap-counter').innerText = "FINISH";
+    currentSpeed = 0;
+    playerCar.body.setVelocity(0);
+    cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
+    
+    let totalRaceTime = sceneTime - startTime;
+    
+    // Only save scores if the PLAYER won
+    if (winnerName === 'Player') {
+        document.getElementById('res-position').innerText = 'POSITION: 1st 🏆';
+        document.getElementById('res-position').style.color = '#fff';
+        
+        if (totalRaceTime < bestRaceTime) {
+            bestRaceTime = totalRaceTime;
+            localStorage.setItem('f1_bestRace', bestRaceTime);
+            document.getElementById('best-race').innerText = formatTime(bestRaceTime);
+        }
+    } else {
+        document.getElementById('res-position').innerText = 'POSITION: LOST ❌';
+        document.getElementById('res-position').style.color = '#e10600';
+    }
+
+    document.getElementById('res-final').innerText = formatTime(totalRaceTime);
+    document.getElementById('res-best').innerText = formatTime(bestLapTime);
+    document.getElementById('results-modal').classList.add('show');
 }
 
 function update(time) {
-    if (raceFinished) {
+    // Lock all movement until lights go out or if race is over
+    if (!raceStarted || raceFinished) {
+        playerCar.body.setVelocity(0);
         cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
         return;
     }
@@ -183,7 +221,6 @@ function update(time) {
     // --- CPU AI LOGIC ---
     cpuGroup.children.iterate((cpu) => {
         let target = waypoints[cpu.targetWP];
-        
         let dist = Phaser.Math.Distance.Between(cpu.x, cpu.y, target.x, target.y);
         
         if (dist < 80) {
@@ -195,8 +232,23 @@ function update(time) {
         let targetAngle = Phaser.Math.Angle.Between(cpu.x, cpu.y, target.x, target.y);
         cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.05);
         this.physics.velocityFromRotation(cpu.rotation, cpu.speed, cpu.body.velocity);
+
+        // CPU LAP TRACKING
+        if (cpu.y < 350) cpu.checkpointReached = true;
+
+        if (cpu.checkpointReached && cpu.y > 700 && cpu.prevX > 730 && cpu.x <= 730) {
+            cpu.laps++;
+            cpu.checkpointReached = false;
+            
+            // SUPER SPRINT WIN CONDITION: CPU Wins!
+            if (cpu.laps > maxLaps) {
+                triggerRaceFinish('CPU', time);
+            }
+        }
+        cpu.prevX = cpu.x;
     });
 
+    // --- PLAYER MASK LOGIC ---
     let x = Math.floor(playerCar.x);
     let y = Math.floor(playerCar.y);
 
@@ -217,6 +269,7 @@ function update(time) {
         else { maxSpeed = 450; }
     }
 
+    // --- PLAYER CONTROLS ---
     if (cursors.up.isDown || mobileGas) {
         currentSpeed += 15; 
     } else if (cursors.down.isDown || mobileBrake) {
@@ -235,6 +288,7 @@ function update(time) {
 
     this.physics.velocityFromRotation(playerCar.rotation, currentSpeed, playerCar.body.velocity);
 
+    // --- PLAYER LAP LOGIC ---
     if (playerCar.y < 350) checkpointReached = true;
 
     if (checkpointReached && playerCar.y > 700 && prevX > 730 && playerCar.x <= 730) {
@@ -250,23 +304,9 @@ function update(time) {
         laps++;
         checkpointReached = false;
         
+        // SUPER SPRINT WIN CONDITION: Player Wins!
         if (laps > maxLaps) {
-            raceFinished = true;
-            document.getElementById('lap-counter').innerText = "FINISH";
-            currentSpeed = 0;
-            playerCar.body.setVelocity(0);
-            
-            let totalRaceTime = time - startTime;
-            if (totalRaceTime < bestRaceTime) {
-                bestRaceTime = totalRaceTime;
-                localStorage.setItem('f1_bestRace', bestRaceTime);
-                document.getElementById('best-race').innerText = formatTime(bestRaceTime);
-            }
-
-            document.getElementById('res-final').innerText = formatTime(totalRaceTime);
-            document.getElementById('res-best').innerText = formatTime(bestLapTime);
-            document.getElementById('results-modal').classList.add('show');
-            
+            triggerRaceFinish('Player', time);
         } else {
             document.getElementById('lap-counter').innerText = laps;
         }
@@ -275,7 +315,7 @@ function update(time) {
     prevX = playerCar.x;
     prevY = playerCar.y;
 
-    if (!raceFinished) {
+    if (!raceFinished && raceStarted) {
         let elapsedTime = time - startTime;
         document.getElementById('timer-display').innerText = formatTime(elapsedTime);
     }
