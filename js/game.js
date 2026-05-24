@@ -1,4 +1,4 @@
-const SHOW_WAYPOINTS = false; // Turned off for the clean race view!
+const SHOW_WAYPOINTS = false; // Set to true if you ever want to see the AI path again!
 
 const config = {
     type: Phaser.AUTO,
@@ -17,7 +17,7 @@ let cpuGroup;
 let cursors;
 
 // RACE STATE
-let raceStarted = false; // Blocks movement until lights go out
+let raceStarted = false; 
 let raceFinished = false;
 let startTime = 0, laps = 1, maxLaps = 3;
 let checkpointReached = false;
@@ -33,12 +33,20 @@ let maxSpeed = 450;
 
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
 
+// --- STRICTLY MAPPED ASPHALT WAYPOINTS ---
 const waypoints = [
-    {x: 1200, y: 830}, {x: 800, y: 830}, {x: 250, y: 830}, {x: 150, y: 720}, 
-    {x: 250, y: 600}, {x: 650, y: 600}, {x: 800, y: 480}, {x: 650, y: 380}, 
-    {x: 250, y: 380}, {x: 150, y: 260}, {x: 250, y: 150}, {x: 1300, y: 150}, 
-    {x: 1450, y: 250}, {x: 1300, y: 380}, {x: 1050, y: 500}, {x: 1250, y: 650}, 
-    {x: 1450, y: 750}, {x: 1300, y: 830}
+    {x: 1000, y: 810}, {x: 800, y: 810}, {x: 400, y: 810}, {x: 250, y: 810}, 
+    {x: 160, y: 770}, {x: 130, y: 720}, {x: 160, y: 640}, 
+    {x: 250, y: 600}, {x: 550, y: 600}, 
+    {x: 700, y: 580}, {x: 780, y: 480}, {x: 700, y: 390}, 
+    {x: 550, y: 370}, {x: 250, y: 370}, 
+    {x: 160, y: 340}, {x: 130, y: 260}, {x: 160, y: 180}, 
+    {x: 250, y: 150}, {x: 800, y: 150}, {x: 1300, y: 150}, 
+    {x: 1420, y: 180}, {x: 1470, y: 250}, {x: 1420, y: 350}, 
+    {x: 1300, y: 390}, {x: 1150, y: 430}, {x: 1020, y: 500}, 
+    {x: 1100, y: 580}, {x: 1250, y: 620}, 
+    {x: 1420, y: 650}, {x: 1470, y: 730}, {x: 1420, y: 790}, 
+    {x: 1300, y: 810}, {x: 1100, y: 810}
 ];
 
 function formatTime(msTime) {
@@ -100,39 +108,44 @@ function create() {
     ctx.drawImage(srcMask, 0, 0, 1600, 900);
     maskData = ctx.getImageData(0, 0, 1600, 900).data;
 
-    generateCarSprite(this, 'car-red', 0xe10600); 
-    generateCarSprite(this, 'car-blue', 0x0055ff); 
-    generateCarSprite(this, 'car-yellow', 0xffcc00); 
+    // GENERATE 8 CAR COLORS
+    generateCarSprite(this, 'car-red', 0xe10600);    // Player
+    generateCarSprite(this, 'car-blue', 0x0055ff);   // CPU 1
+    generateCarSprite(this, 'car-yellow', 0xffcc00); // CPU 2
+    generateCarSprite(this, 'car-green', 0x00ff00);  // CPU 3
+    generateCarSprite(this, 'car-purple', 0x9900ff); // CPU 4
+    generateCarSprite(this, 'car-orange', 0xff6600); // CPU 5
+    generateCarSprite(this, 'car-cyan', 0x00ffff);   // CPU 6
+    generateCarSprite(this, 'car-pink', 0xff00ff);   // CPU 7
 
     cpuGroup = this.physics.add.group();
     
-    // --- STARTING GRID SETUP ---
-    // CPU 1 (Blue) - Top grid spot
-    let cpu1 = cpuGroup.create(880, 780, 'car-blue'); 
-    cpu1.targetWP = 2; // Aim for the corner
-    cpu1.speed = 220;  // SUPER SLOW (Easy mode)
-    cpu1.laps = 1;
-    cpu1.checkpointReached = false;
-    cpu1.prevX = cpu1.x;
-
-    // CPU 2 (Yellow) - Middle grid spot
-    let cpu2 = cpuGroup.create(940, 835, 'car-yellow'); 
-    cpu2.targetWP = 2;
-    cpu2.speed = 200;  // EVEN SLOWER
-    cpu2.laps = 1;
-    cpu2.checkpointReached = false;
-    cpu2.prevX = cpu2.x;
-
-    cpuGroup.children.iterate((cpu) => {
+    // --- 8-CAR STARTING GRID ---
+    const spawnCPU = (x, y, color, speed) => {
+        let cpu = cpuGroup.create(x, y, color);
+        cpu.targetWP = 2; // Aim slightly ahead
+        cpu.speed = speed;
+        cpu.laps = 1;
+        cpu.checkpointReached = false;
+        cpu.prevX = cpu.x;
         cpu.setDepth(10);
         cpu.angle = 180;
         cpu.body.setCollideWorldBounds(true);
-        cpu.body.setBounce(0.4); 
-        cpu.body.setMass(1.5);   
-    });
+        cpu.body.setBounce(0.5); 
+        cpu.body.setMass(1.5); // Slightly heavier than player
+    };
 
-    // Player - Front grid spot
-    playerCar = this.physics.add.sprite(880, 835, 'car-red');
+    // Staggered speeds based on your ~13s lap time so they don't bunch up forever
+    spawnCPU(780, 780, 'car-blue', 400);   // Pole
+    spawnCPU(780, 840, 'car-yellow', 390); // 2nd
+    spawnCPU(860, 780, 'car-green', 380);  // 3rd
+    spawnCPU(860, 840, 'car-purple', 370); // 4th
+    spawnCPU(940, 780, 'car-orange', 360); // 5th
+    spawnCPU(940, 840, 'car-cyan', 350);   // 6th
+    spawnCPU(1020, 780, 'car-pink', 340);  // 7th
+
+    // PLAYER - Grid 8 (Dead Last)
+    playerCar = this.physics.add.sprite(1020, 840, 'car-red');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setCollideWorldBounds(true);
@@ -161,47 +174,70 @@ function create() {
     bindBtn('btn-gas', () => mobileGas = true, () => mobileGas = false);
     bindBtn('btn-brake', () => mobileBrake = true, () => mobileBrake = false);
 
-    // --- 5 LIGHT COUNTDOWN LOGIC ---
+    // --- 5 LIGHT COUNTDOWN ---
     let lightStep = 0;
     let lightInterval = setInterval(() => {
         lightStep++;
         if (lightStep <= 5) {
             document.getElementById(`light-${lightStep}`).classList.add('on');
         } else {
-            // Lights Out - Race Starts!
             clearInterval(lightInterval);
             document.querySelectorAll('.light').forEach(l => l.classList.remove('on'));
             document.getElementById('start-lights').style.display = 'none';
             
             raceStarted = true;
-            startTime = this.time.now; // Timer officially starts now
+            startTime = this.time.now; 
             lapStartTime = startTime;
         }
-    }, 1000); // 1 second per light
+    }, 1000); 
 }
 
-// Reusable function to trigger the end of the race for everyone
-function triggerRaceFinish(winnerName, sceneTime) {
+// Determines Player Position based on CPU progress
+function calculatePlayerPosition() {
+    let rank = 1;
+    cpuGroup.children.iterate((cpu) => {
+        if (cpu.laps > laps) {
+            rank++;
+        } else if (cpu.laps === laps) {
+            // Both on same lap. Check who is further along the track.
+            if (cpu.checkpointReached && !checkpointReached) {
+                rank++;
+            } else if (cpu.checkpointReached && checkpointReached) {
+                // Both on final stretch (bottom straight going left)
+                if (cpu.x < playerCar.x) rank++;
+            }
+        }
+    });
+    return rank;
+}
+
+function triggerRaceFinish(time) {
     raceFinished = true;
     document.getElementById('lap-counter').innerText = "FINISH";
     currentSpeed = 0;
     playerCar.body.setVelocity(0);
     cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
     
-    let totalRaceTime = sceneTime - startTime;
+    let totalRaceTime = time - startTime;
+    let finalRank = calculatePlayerPosition();
     
-    // Only save scores if the PLAYER won
-    if (winnerName === 'Player') {
-        document.getElementById('res-position').innerText = 'POSITION: 1st 🏆';
+    let suffix = "th";
+    if (finalRank === 1) suffix = "st";
+    if (finalRank === 2) suffix = "nd";
+    if (finalRank === 3) suffix = "rd";
+
+    document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
+    
+    // Only save Best Race if Player gets 1st
+    if (finalRank === 1) {
         document.getElementById('res-position').style.color = '#fff';
-        
+        document.getElementById('res-position').innerText += " 🏆";
         if (totalRaceTime < bestRaceTime) {
             bestRaceTime = totalRaceTime;
             localStorage.setItem('f1_bestRace', bestRaceTime);
             document.getElementById('best-race').innerText = formatTime(bestRaceTime);
         }
     } else {
-        document.getElementById('res-position').innerText = 'POSITION: LOST ❌';
         document.getElementById('res-position').style.color = '#e10600';
     }
 
@@ -211,7 +247,6 @@ function triggerRaceFinish(winnerName, sceneTime) {
 }
 
 function update(time) {
-    // Lock all movement until lights go out or if race is over
     if (!raceStarted || raceFinished) {
         playerCar.body.setVelocity(0);
         cpuGroup.children.iterate(cpu => cpu.body.setVelocity(0));
@@ -230,7 +265,8 @@ function update(time) {
         }
 
         let targetAngle = Phaser.Math.Angle.Between(cpu.x, cpu.y, target.x, target.y);
-        cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.05);
+        // Smoothed turning so they don't jerk around
+        cpu.rotation = Phaser.Math.Angle.RotateTo(cpu.rotation, targetAngle, 0.08);
         this.physics.velocityFromRotation(cpu.rotation, cpu.speed, cpu.body.velocity);
 
         // CPU LAP TRACKING
@@ -240,9 +276,9 @@ function update(time) {
             cpu.laps++;
             cpu.checkpointReached = false;
             
-            // SUPER SPRINT WIN CONDITION: CPU Wins!
+            // SUDDEN DEATH: CPU finishes first!
             if (cpu.laps > maxLaps) {
-                triggerRaceFinish('CPU', time);
+                triggerRaceFinish(time);
             }
         }
         cpu.prevX = cpu.x;
@@ -304,9 +340,9 @@ function update(time) {
         laps++;
         checkpointReached = false;
         
-        // SUPER SPRINT WIN CONDITION: Player Wins!
+        // SUDDEN DEATH: Player finishes first!
         if (laps > maxLaps) {
-            triggerRaceFinish('Player', time);
+            triggerRaceFinish(time);
         } else {
             document.getElementById('lap-counter').innerText = laps;
         }
