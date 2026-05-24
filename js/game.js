@@ -1,3 +1,7 @@
+// --- EASY SETTINGS ---
+// Change this to 'true' if you want to see the wall hitboxes to fine-tune them!
+const SHOW_WALL_HITBOXES = false; 
+
 const config = {
     type: Phaser.AUTO,
     width: 1600,
@@ -10,7 +14,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: { 
-            debug: false // Turned off! No more confusing purple boxes.
+            debug: SHOW_WALL_HITBOXES 
         }
     },
     scene: { preload, create, update }
@@ -21,12 +25,12 @@ const game = new Phaser.Game(config);
 let playerCar;
 let cursors;
 let trackWalls;
-
 let startTime = 0;
 let laps = 0;
 let maxLaps = 3;
 let checkpointReached = false;
 let raceFinished = false;
+let startLineX = 725; 
 let trackTextureCanvas;
 
 function preload() {
@@ -39,21 +43,41 @@ function create() {
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // Pixel reader for the grass
     trackTextureCanvas = this.textures.createCanvas('trackPixelMap', 1600, 900);
     let srcImg = this.textures.get('trackImg').getSourceImage();
     trackTextureCanvas.context.drawImage(srcImg, 0, 0, 1600, 900);
 
     // ==========================================
-    // 1. OUTER BOUNDARIES (Keeps you on screen)
+    // 1. SOLID COLLISION WALLS (Armco & Tires)
     // ==========================================
     trackWalls = this.physics.add.staticGroup();
+    
+    // I mapped these to the physical barriers in your image.
+    // If they are slightly off, set SHOW_WALL_HITBOXES = true at the top to see and adjust them!
     const wallData = [
+        // Outer Screen Edges (Failsafe)
         { x: 800, y: -25, w: 1600, h: 50 }, 
         { x: 800, y: 925, w: 1600, h: 50 }, 
         { x: -25, y: 450, w: 50, h: 900 },  
-        { x: 1625, y: 450, w: 50, h: 900 }
+        { x: 1625, y: 450, w: 50, h: 900 },
+        
+        // Top Grandstand Barrier
+        { x: 800, y: 130, w: 1400, h: 30 },
+        
+        // Bottom Straight Barrier
+        { x: 800, y: 880, w: 1400, h: 30 },
+
+        // Middle Horizontal Armco Barriers
+        { x: 450, y: 645, w: 600, h: 25 }, // Bottom left straight
+        { x: 350, y: 460, w: 400, h: 25 }, // Middle left straight
+        
+        // Major Tire Stacks (Approximations)
+        { x: 130, y: 480, w: 40, h: 100 },  // Far left hairpin tires
+        { x: 1480, y: 780, w: 40, h: 150 }, // Bottom right hairpin tires
+        { x: 1150, y: 350, w: 150, h: 80 }, // Top right chicane tires
+        { x: 670, y: 550, w: 50, h: 50 }    // Center kink tires
     ];
+
     wallData.forEach(wall => {
         let hitbox = this.add.rectangle(wall.x, wall.y, wall.w, wall.h, 0x000000, 0); 
         this.physics.add.existing(hitbox, true); 
@@ -61,86 +85,99 @@ function create() {
     });
 
     // ==========================================
-    // 2. THE CAR SPRITE
+    // 2. THE CAR SPRITE (50% SMALLER)
     // ==========================================
     let carGen = this.make.graphics({ x: 0, y: 0, add: false });
+    
+    // Tires (Black)
     carGen.fillStyle(0x111111, 1);
-    carGen.fillRoundedRect(4, 0, 12, 8, 2);   
-    carGen.fillRoundedRect(4, 32, 12, 8, 2);  
-    carGen.fillRoundedRect(34, 0, 10, 6, 2);  
-    carGen.fillRoundedRect(34, 34, 10, 6, 2); 
+    carGen.fillRoundedRect(2, 0, 6, 4, 1);   // Rear Left
+    carGen.fillRoundedRect(2, 16, 6, 4, 1);  // Rear Right
+    carGen.fillRoundedRect(17, 0, 5, 3, 1);  // Front Left
+    carGen.fillRoundedRect(17, 17, 5, 3, 1); // Front Right
+    
+    // Rear Wing (Black)
     carGen.fillStyle(0x222222, 1);
-    carGen.fillRect(0, 8, 6, 24);
+    carGen.fillRect(0, 4, 3, 12);
+    
+    // Main Body & Nose (Red)
     carGen.fillStyle(0xe10600, 1);
-    carGen.fillRect(6, 12, 30, 16); 
-    carGen.fillRect(36, 16, 12, 8);
+    carGen.fillRect(3, 6, 15, 8); 
+    carGen.fillRect(18, 8, 6, 4); 
+    
+    // Front Wing (Black)
     carGen.fillStyle(0x222222, 1);
-    carGen.fillRect(45, 6, 5, 28);
+    carGen.fillRect(22, 3, 3, 14);
+    
+    // Helmet (White)
     carGen.fillStyle(0xffffff, 1);
-    carGen.fillCircle(22, 20, 5);
-    carGen.generateTexture('f1-sprite', 50, 40);
+    carGen.fillCircle(11, 10, 2.5);
+    
+    // Generates a 25x20 sprite (Exactly half of the old 50x40)
+    carGen.generateTexture('f1-sprite', 25, 20);
 
     // ==========================================
-    // 3. SPAWN PLAYER ON THE GRID
+    // 3. SPAWN PLAYER
     // ==========================================
-    // Spawns perfectly on the bottom-right grid slot facing left
-    playerCar = this.physics.add.sprite(950, 835, 'f1-sprite');
+    playerCar = this.physics.add.sprite(930, 835, 'f1-sprite');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
-    playerCar.body.setBounce(0.4); 
-    playerCar.body.setCollideWorldBounds(true);
     
+    // Bounce physics when hitting the physical walls
+    playerCar.body.setBounce(0.5); 
+    playerCar.body.setCollideWorldBounds(true);
     this.physics.add.collider(playerCar, trackWalls);
+    
     cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update(time) {
     if (raceFinished) return;
 
-    // --- TERRAIN PIXEL DETECTION ---
+    // --- TERRAIN GRASS/DIRT DETECTION ---
     let pixel = new Phaser.Display.Color();
     try {
         trackTextureCanvas.getPixel(Math.floor(playerCar.x), Math.floor(playerCar.y), pixel);
         
-        // If the pixel is green (grass) or brownish (dirt)
         if (pixel.g > 100 || (pixel.r > 150 && pixel.g > 120)) {
-            // OFF TRACK: Massive penalty, car bogs down
-            playerCar.body.setDrag(1200);
-            playerCar.body.setMaxVelocity(150);
+            // 🚨 ON GRASS/DIRT: Extreme drag, car bogs down instantly
+            playerCar.body.setDrag(2500);
+            playerCar.body.setMaxVelocity(120);
         } else {
-            // ON ASPHALT: Fast arcade racing
-            playerCar.body.setDrag(150);
-            playerCar.body.setMaxVelocity(600);
+            // 🏁 ON ASPHALT: Grippy F1 Physics
+            // High drag kills sideways sliding, high velocity allows speed
+            playerCar.body.setDrag(1500); 
+            playerCar.body.setMaxVelocity(550);
         }
     } catch(e) {}
 
-    // --- CONTROLS ---
+    // --- CONTROLS (HIGH GRIP SETUP) ---
     playerCar.body.setAngularVelocity(0);
     
     if (cursors.left.isDown) {
-        playerCar.body.setAngularVelocity(-260);
+        playerCar.body.setAngularVelocity(-320); // Snappier steering
     } else if (cursors.right.isDown) {
-        playerCar.body.setAngularVelocity(260);
+        playerCar.body.setAngularVelocity(320);
     }
 
     if (cursors.up.isDown) {
-        this.physics.velocityFromRotation(playerCar.rotation, 900, playerCar.body.acceleration);
+        // Extreme acceleration overcomes the high drag instantly, pulling the car forward instead of sliding
+        this.physics.velocityFromRotation(playerCar.rotation, 2500, playerCar.body.acceleration);
     } else if (cursors.down.isDown) {
-        this.physics.velocityFromRotation(playerCar.rotation, -400, playerCar.body.acceleration);
+        // Strong Brakes
+        this.physics.velocityFromRotation(playerCar.rotation, -1000, playerCar.body.acceleration);
     } else {
         playerCar.body.setAcceleration(0);
     }
 
     // --- LAP TRACKING LOGIC ---
-    // 1. Must drive to the top half of the track to hit the hidden checkpoint
     if (playerCar.y < 350) {
         checkpointReached = true;
     }
 
-    // 2. Must cross the checkered line (around X: 820, Y: > 720) with the checkpoint triggered
     if (checkpointReached && playerCar.x <= 820 && playerCar.y > 720) {
         laps++;
-        checkpointReached = false; // Reset so it doesn't double-count
+        checkpointReached = false;
         
         if (laps > maxLaps) {
             raceFinished = true;
