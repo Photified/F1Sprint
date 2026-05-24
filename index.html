@@ -14,19 +14,29 @@
         <div class="ui-item title">🏎️ RETRO F1</div>
         <div class="ui-item">LAP: <span id="lap-counter">1</span>/3</div>
         <div class="ui-item">TIME: <span id="timer-display">00:00.000</span></div>
-        <button id="btn-help" title="Help & Settings">⚙️</button>
+        <button id="btn-help" title="Help">⚙️</button>
     </div>
 
     <div id="game-wrapper">
         <div id="game-container"></div>
+        
+        <div id="mobile-controls">
+            <div class="d-pad">
+                <button id="btn-left">◀</button>
+                <button id="btn-right">▶</button>
+            </div>
+            <div class="action-buttons">
+                <button id="btn-brake">Brake</button>
+                <button id="btn-gas">GAS</button>
+            </div>
+        </div>
     </div>
 
     <div id="help-modal">
         <h2>HOW TO PLAY</h2>
-        <p><b>Accelerate:</b> UP Arrow</p>
-        <p><b>Brake/Reverse:</b> DOWN Arrow</p>
-        <p><b>Steer:</b> LEFT / RIGHT Arrows</p>
-        <p style="color: #bbb; font-size: 14px;">Stay on the asphalt! The grass will slow you down, and tire walls will stop you.</p>
+        <p><b>Accelerate:</b> UP Arrow / GAS Button</p>
+        <p><b>Brake:</b> DOWN Arrow / Brake Button</p>
+        <p><b>Steer:</b> LEFT & RIGHT</p>
         <div style="margin-top: 20px;">
             <button id="btn-close">Close</button>
             <button id="btn-install">Install App</button>
@@ -56,9 +66,7 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none';
-                }
+                if (outcome === 'accepted') installBtn.style.display = 'none';
                 deferredPrompt = null;
             }
         });
