@@ -33,65 +33,74 @@ let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = fa
 
 // --- PERFECTED RACING LINE (Mapped directly to your yellow line) ---
 const waypoints = [
-  // Start / bottom straight - moving left
-  {x: 1390, y: 790},
-  {x: 1200, y: 790},
-  {x: 1000, y: 790},
-  {x: 820, y: 790},
-  {x: 620, y: 790},
-  {x: 420, y: 790},
-  {x: 260, y: 785},
 
-  // Bottom-left hairpin - up and right
-  {x: 155, y: 755},
-  {x: 105, y: 700},
-  {x: 105, y: 640},
-  {x: 155, y: 590},
-  {x: 260, y: 565},
-  {x: 430, y: 565},
-  {x: 575, y: 565},
+  // START / MAIN STRAIGHT
+  {x: 1320, y: 790},
+  {x: 1120, y: 790},
+  {x: 920, y: 790},
+  {x: 720, y: 790},
+  {x: 520, y: 790},
+  {x: 320, y: 785},
 
-  // Left-middle bend into narrow S
-  {x: 665, y: 545},
-  {x: 715, y: 500},
-  {x: 735, y: 445},
-  {x: 700, y: 395},
-  {x: 600, y: 380},
-  {x: 445, y: 385},
-  {x: 285, y: 385},
+  // BOTTOM LEFT HAIRPIN
+  {x: 210, y: 760},
+  {x: 135, y: 705},
+  {x: 110, y: 635},
+  {x: 145, y: 565},
+  {x: 245, y: 520},
 
-  // Top-left hairpin - up and right
-  {x: 170, y: 355},
-  {x: 115, y: 300},
-  {x: 120, y: 235},
-  {x: 180, y: 180},
-  {x: 295, y: 160},
-  {x: 500, y: 160},
-  {x: 760, y: 160},
-  {x: 1020, y: 160},
-  {x: 1265, y: 160},
+  // LEFT SIDE SWEEP
+  {x: 410, y: 500},
+  {x: 560, y: 500},
+  {x: 670, y: 485},
 
-  // Top-right hairpin
-  {x: 1400, y: 175},
-  {x: 1480, y: 225},
-  {x: 1505, y: 285},
-  {x: 1480, y: 340},
-  {x: 1400, y: 375},
-  {x: 1260, y: 390},
+  // CENTER LEFT S CURVE
+  {x: 735, y: 450},
+  {x: 760, y: 395},
+  {x: 725, y: 340},
 
-  // Right-side inner sweep / chicane
-  {x: 1125, y: 405},
-  {x: 1050, y: 455},
-  {x: 1040, y: 515},
-  {x: 1120, y: 555},
-  {x: 1270, y: 565},
-  {x: 1410, y: 580},
+  // TOP LEFT ENTRY
+  {x: 620, y: 305},
+  {x: 470, y: 300},
+  {x: 315, y: 300},
 
-  // Bottom-right hairpin back to start
-  {x: 1490, y: 625},
-  {x: 1515, y: 690},
-  {x: 1485, y: 750},
-  {x: 1390, y: 790}
+  // TOP LEFT HAIRPIN
+  {x: 205, y: 275},
+  {x: 135, y: 225},
+  {x: 120, y: 160},
+  {x: 170, y: 105},
+  {x: 285, y: 80},
+
+  // TOP STRAIGHT
+  {x: 500, y: 75},
+  {x: 760, y: 75},
+  {x: 1030, y: 80},
+  {x: 1280, y: 85},
+
+  // TOP RIGHT HAIRPIN
+  {x: 1410, y: 120},
+  {x: 1490, y: 190},
+  {x: 1510, y: 270},
+  {x: 1480, y: 345},
+  {x: 1395, y: 400},
+
+  // RIGHT SIDE INNER SECTION
+  {x: 1260, y: 425},
+  {x: 1140, y: 445},
+  {x: 1065, y: 490},
+  {x: 1045, y: 555},
+  {x: 1110, y: 610},
+
+  // EXITING INNER SECTION
+  {x: 1240, y: 645},
+  {x: 1380, y: 670},
+
+  // FINAL HAIRPIN
+  {x: 1480, y: 705},
+  {x: 1510, y: 765},
+  {x: 1460, y: 820},
+  {x: 1320, y: 790}
+
 ];
 
 function formatTime(msTime) {
