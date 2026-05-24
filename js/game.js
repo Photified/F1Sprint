@@ -16,9 +16,8 @@ let cursors;
 let startTime = 0, laps = 0, maxLaps = 3;
 let checkpointReached = false, raceFinished = false;
 
-// Mask variables
-let maskData = null; // Holds the raw pixel array of your mask.png
-let prevX, prevY; // Stores the car's last safe position
+let maskData = null; 
+let prevX, prevY; 
 
 // Mobile control states
 let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = false;
@@ -31,12 +30,9 @@ function preload() {
 function create() {
     startTime = this.time.now;
 
-    // 1. Draw the visual track
     const bg = this.add.image(800, 450, 'trackImg');
     bg.setDisplaySize(1600, 900); 
     
-    // 2. THE FIX: Vanilla HTML5 Canvas Pixel Extraction
-    // This perfectly extracts your Red, Black, and White pixels into a massive array
     let offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = 1600;
     offscreenCanvas.height = 900;
@@ -46,7 +42,6 @@ function create() {
     ctx.drawImage(srcMask, 0, 0, 1600, 900);
     maskData = ctx.getImageData(0, 0, 1600, 900).data;
 
-    // 3. DRAW CAR (50% Scaled down)
     let carGen = this.make.graphics({ x: 0, y: 0, add: false });
     carGen.fillStyle(0x111111, 1);
     carGen.fillRoundedRect(2, 0, 6, 4, 1); carGen.fillRoundedRect(2, 16, 6, 4, 1);  
@@ -57,7 +52,6 @@ function create() {
     carGen.fillStyle(0xffffff, 1); carGen.fillCircle(11, 10, 2.5);
     carGen.generateTexture('f1-sprite', 25, 20);
 
-    // 4. SPAWN PLAYER
     playerCar = this.physics.add.sprite(930, 835, 'f1-sprite');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
@@ -68,10 +62,9 @@ function create() {
 
     cursors = this.input.keyboard.createCursorKeys();
 
-    // 5. BIND MOBILE CONTROLS (Requires the HTML/CSS from the previous message!)
     const bindBtn = (id, keydown, keyup) => {
         const btn = document.getElementById(id);
-        if(!btn) return; // Skips if you haven't added the HTML buttons yet
+        if(!btn) return;
         btn.addEventListener('touchstart', (e) => { e.preventDefault(); keydown(); });
         btn.addEventListener('touchend', (e) => { e.preventDefault(); keyup(); });
         btn.addEventListener('mousedown', (e) => { e.preventDefault(); keydown(); });
@@ -87,13 +80,10 @@ function create() {
 function update(time) {
     if (raceFinished) return;
 
-    // --- MASK PIXEL DETECTION ---
     let x = Math.floor(playerCar.x);
     let y = Math.floor(playerCar.y);
 
-    // Make sure we only check pixels inside the screen
     if (maskData && x >= 0 && x < 1600 && y >= 0 && y < 900) {
-        // Find the specific pixel in the massive array
         let index = (y * 1600 + x) * 4;
         let r = maskData[index];
         let g = maskData[index + 1];
@@ -101,31 +91,24 @@ function update(time) {
         let a = maskData[index + 3];
 
         if (a === 0) {
-            // Failsafe: If pixel is transparent, assume safe asphalt
-            playerCar.body.setDrag(1500); 
-            playerCar.body.setMaxVelocity(550);
+            playerCar.body.setDrag(800); 
+            playerCar.body.setMaxVelocity(350); // SLOWED DOWN (was 550)
             prevX = playerCar.x; prevY = playerCar.y;
         } 
         else if (r < 100 && g < 100 && b < 100) {
-            // ⬛ BLACK PIXEL (WALL HIT)
-            // Teleport back to safe spot and bounce
             playerCar.x = prevX;
             playerCar.y = prevY;
             playerCar.body.velocity.x *= -0.5;
             playerCar.body.velocity.y *= -0.5;
         } 
         else if (r > 100 && g < 100 && b < 100) {
-            // 🟥 RED PIXEL (GRASS/DIRT)
-            // Massive drag, slow speed
             playerCar.body.setDrag(2500);
-            playerCar.body.setMaxVelocity(120);
+            playerCar.body.setMaxVelocity(80); // GRASS IS SLOWER NOW
             prevX = playerCar.x; prevY = playerCar.y;
         } 
         else {
-            // ⬜ WHITE PIXEL (ASPHALT)
-            // Fast F1 Grip
-            playerCar.body.setDrag(1500); 
-            playerCar.body.setMaxVelocity(550);
+            playerCar.body.setDrag(800); 
+            playerCar.body.setMaxVelocity(350); // SLOWED DOWN (was 550)
             prevX = playerCar.x; prevY = playerCar.y;
         }
     }
@@ -133,22 +116,21 @@ function update(time) {
     // --- CONTROLS ---
     playerCar.body.setAngularVelocity(0);
     
-    if (cursors.left.isDown || mobileLeft) playerCar.body.setAngularVelocity(-320);
-    else if (cursors.right.isDown || mobileRight) playerCar.body.setAngularVelocity(320);
+    // SLOWER STEERING (was 320, now 200)
+    if (cursors.left.isDown || mobileLeft) playerCar.body.setAngularVelocity(-200);
+    else if (cursors.right.isDown || mobileRight) playerCar.body.setAngularVelocity(200);
 
+    // SLOWER ACCELERATION (was 2500, now 1200)
     if (cursors.up.isDown || mobileGas) {
-        this.physics.velocityFromRotation(playerCar.rotation, 2500, playerCar.body.acceleration);
+        this.physics.velocityFromRotation(playerCar.rotation, 1200, playerCar.body.acceleration);
     } else if (cursors.down.isDown || mobileBrake) {
-        this.physics.velocityFromRotation(playerCar.rotation, -1000, playerCar.body.acceleration);
+        this.physics.velocityFromRotation(playerCar.rotation, -800, playerCar.body.acceleration);
     } else {
         playerCar.body.setAcceleration(0);
     }
 
-    // --- LAP TRACKING ---
-    // 1. Must pass the top half of the track
     if (playerCar.y < 450) checkpointReached = true;
 
-    // 2. Must cross the bottom straight going left
     if (checkpointReached && playerCar.x <= 850 && playerCar.y > 700) {
         laps++;
         checkpointReached = false;
@@ -162,7 +144,6 @@ function update(time) {
         }
     }
 
-    // --- TIMER ---
     if (!raceFinished) {
         let elapsedTime = time - startTime;
         let minutes = Math.floor(elapsedTime / 60000);
