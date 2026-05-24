@@ -118,20 +118,20 @@ function create() {
         cpu.body.setMass(1.5); 
     };
 
-    // --- ALIGNED & STAGGERED 8-CAR GRID ---
-    // Top Row (Shifted up to 782)
-    spawnCPU(870, 782, 'car-blue', 400);   // 1st
-    spawnCPU(970, 782, 'car-green', 380);  // 3rd
-    spawnCPU(1070, 782, 'car-orange', 360);// 5th
-    spawnCPU(1170, 782, 'car-pink', 340);  // 7th
+    // --- ALIGNED & STAGGERED 8-CAR GRID (Moved UP 15px) ---
+    // Top Row
+    spawnCPU(870, 767, 'car-blue', 400);   // 1st
+    spawnCPU(970, 767, 'car-green', 380);  // 3rd
+    spawnCPU(1070, 767, 'car-orange', 360);// 5th
+    spawnCPU(1170, 767, 'car-pink', 340);  // 7th
 
-    // Bottom Row (Shifted up to 828, and staggered right +30px)
-    spawnCPU(900, 828, 'car-yellow', 390); // 2nd
-    spawnCPU(1000, 828, 'car-purple', 370);// 4th
-    spawnCPU(1100, 828, 'car-cyan', 350);  // 6th
+    // Bottom Row 
+    spawnCPU(900, 813, 'car-yellow', 390); // 2nd
+    spawnCPU(1000, 813, 'car-purple', 370);// 4th
+    spawnCPU(1100, 813, 'car-cyan', 350);  // 6th
 
     // PLAYER - Grid 8 (Dead Last)
-    playerCar = this.physics.add.sprite(1200, 828, 'car-red');
+    playerCar = this.physics.add.sprite(1200, 813, 'car-red');
     playerCar.setDepth(10); 
     playerCar.angle = 180; 
     playerCar.body.setCollideWorldBounds(true);
