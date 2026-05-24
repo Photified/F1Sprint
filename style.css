@@ -1,20 +1,110 @@
-/* Reset margins and prevent accidental scrolling/zooming */
 body, html {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
-    background-color: #111; /* Dark asphalt background */
+    background-color: #111;
     overflow: hidden;
-    touch-action: none; /* Disables browser swipe gestures on mobile */
+    touch-action: none;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column; /* Stacks the UI and Game vertically */
+}
+
+/* Solid Black UI Bar */
+#ui-layer {
+    height: 60px;
+    width: 100%;
+    background-color: #000;
+    border-bottom: 4px solid #e10600; /* F1 Red Stripe */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    box-sizing: border-box;
+    color: #fff;
+    z-index: 10;
+}
+
+.ui-item {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.title {
+    color: #e10600;
+}
+
+#btn-help {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    color: white; /* Fallback if emoji doesn't render color */
+}
+
+#btn-help:hover {
+    transform: rotate(45deg);
+}
+
+/* Game Wrapper takes up the rest of the screen */
+#game-wrapper {
+    flex: 1;
+    width: 100%;
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    background-color: #222;
 }
 
-/* Add a subtle arcade-cabinet shadow to the game canvas */
+#game-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Force Phaser canvas to fill the wrapper nicely */
 #game-container canvas {
     display: block;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
-    image-rendering: pixelated; /* Keeps retro graphics crisp instead of blurry */
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain; /* Keeps the 16:9 aspect ratio without stretching */
 }
+
+/* Modal */
+#help-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(15, 15, 15, 0.95);
+    border: 4px solid #e10600;
+    padding: 30px 40px;
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 0 50px rgba(0,0,0,1);
+}
+
+#help-modal.show {
+    display: block;
+}
+
+#btn-close, #btn-install {
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#btn-close { background: #555; color: white; }
+#btn-close:hover { background: #777; }
+
+#btn-install { background: #e10600; color: white; margin-left: 10px; display: none; }
+#btn-install:hover { background: #ff1a12; }
