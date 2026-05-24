@@ -10,15 +10,57 @@
 
     <style>
         * {
-            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif !important;
-            letter-spacing: 1px;
+            font-family: "Arial Narrow", "Helvetica Condensed", Arial, sans-serif !important;
+            font-weight: 400 !important;
+            letter-spacing: 0.5px;
         }
 
         button,
         input,
         textarea,
         select {
-            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif !important;
+            font-family: "Arial Narrow", "Helvetica Condensed", Arial, sans-serif !important;
+            font-weight: 400 !important;
+        }
+
+        .title {
+            font-weight: 700 !important;
+            letter-spacing: 1px;
+        }
+
+        #race-prompt {
+            position: fixed;
+            top: 32%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            color: #fff;
+            font-size: 54px;
+            font-weight: 700 !important;
+            letter-spacing: 2px;
+            text-align: center;
+            text-transform: uppercase;
+            text-shadow:
+                3px 3px 0 #000,
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                0 0 12px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        #race-prompt.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #race-prompt.go {
+            color: #ff1a1a;
+            font-size: 72px;
+            font-weight: 700 !important;
+            transform: translate(-50%, -50%) scale(1.1);
         }
     </style>
 
@@ -39,6 +81,8 @@
         
         <button id="btn-help" title="Help">⚙️</button>
     </div>
+
+    <div id="race-prompt">YOU ARE THE RED CAR</div>
 
     <div id="start-lights">
         <div class="light" id="light-1"></div>
@@ -96,6 +140,24 @@
         document.getElementById('btn-restart').addEventListener('click', () => {
             location.reload(); 
         });
+
+        const racePrompt = document.getElementById('race-prompt');
+
+        function showRacePrompt(text, isGo = false) {
+            racePrompt.textContent = text;
+            racePrompt.classList.add('show');
+
+            if (isGo) {
+                racePrompt.classList.add('go');
+            } else {
+                racePrompt.classList.remove('go');
+            }
+        }
+
+        function hideRacePrompt() {
+            racePrompt.classList.remove('show');
+            racePrompt.classList.remove('go');
+        }
 
         let deferredPrompt;
         const installBtn = document.getElementById('btn-install');
