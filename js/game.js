@@ -33,26 +33,65 @@ let mobileLeft = false, mobileRight = false, mobileGas = false, mobileBrake = fa
 
 // --- PERFECTED RACING LINE (Mapped directly to your yellow line) ---
 const waypoints = [
-    // Bottom straight (moving left)
-    {x: 1300, y: 790}, {x: 800, y: 790}, {x: 400, y: 790}, 
-    // Turn 1 (bottom left, U-turn)
-    {x: 250, y: 780}, {x: 170, y: 740}, {x: 140, y: 680}, {x: 170, y: 610}, {x: 250, y: 575}, 
-    // Middle straight (moving right)
-    {x: 400, y: 565}, {x: 600, y: 565}, 
-    // S-Curve (going up)
-    {x: 720, y: 545}, {x: 780, y: 480}, {x: 720, y: 405}, 
-    // Upper middle straight (moving left)
-    {x: 600, y: 385}, {x: 400, y: 385}, 
-    // Turn 2 (top left, U-turn)
-    {x: 250, y: 375}, {x: 170, y: 335}, {x: 140, y: 275}, {x: 170, y: 205}, {x: 250, y: 170}, 
-    // Top straight (moving right)
-    {x: 400, y: 160}, {x: 900, y: 160}, {x: 1250, y: 160}, 
-    // Turn 3 (top right, U-turn into chicane)
-    {x: 1380, y: 175}, {x: 1450, y: 220}, {x: 1480, y: 280}, {x: 1450, y: 340}, {x: 1380, y: 375}, 
-    // Chicane (left around the island)
-    {x: 1250, y: 390}, {x: 1120, y: 410}, {x: 1060, y: 480}, {x: 1120, y: 550}, {x: 1250, y: 575}, 
-    // Turn 4 (bottom right, U-turn back to start)
-    {x: 1380, y: 590}, {x: 1450, y: 635}, {x: 1480, y: 695}, {x: 1450, y: 760}, {x: 1380, y: 785}
+  // Start / bottom straight - moving left
+  {x: 1390, y: 790},
+  {x: 1200, y: 790},
+  {x: 1000, y: 790},
+  {x: 820, y: 790},
+  {x: 620, y: 790},
+  {x: 420, y: 790},
+  {x: 260, y: 785},
+
+  // Bottom-left hairpin - up and right
+  {x: 155, y: 755},
+  {x: 105, y: 700},
+  {x: 105, y: 640},
+  {x: 155, y: 590},
+  {x: 260, y: 565},
+  {x: 430, y: 565},
+  {x: 575, y: 565},
+
+  // Left-middle bend into narrow S
+  {x: 665, y: 545},
+  {x: 715, y: 500},
+  {x: 735, y: 445},
+  {x: 700, y: 395},
+  {x: 600, y: 380},
+  {x: 445, y: 385},
+  {x: 285, y: 385},
+
+  // Top-left hairpin - up and right
+  {x: 170, y: 355},
+  {x: 115, y: 300},
+  {x: 120, y: 235},
+  {x: 180, y: 180},
+  {x: 295, y: 160},
+  {x: 500, y: 160},
+  {x: 760, y: 160},
+  {x: 1020, y: 160},
+  {x: 1265, y: 160},
+
+  // Top-right hairpin
+  {x: 1400, y: 175},
+  {x: 1480, y: 225},
+  {x: 1505, y: 285},
+  {x: 1480, y: 340},
+  {x: 1400, y: 375},
+  {x: 1260, y: 390},
+
+  // Right-side inner sweep / chicane
+  {x: 1125, y: 405},
+  {x: 1050, y: 455},
+  {x: 1040, y: 515},
+  {x: 1120, y: 555},
+  {x: 1270, y: 565},
+  {x: 1410, y: 580},
+
+  // Bottom-right hairpin back to start
+  {x: 1490, y: 625},
+  {x: 1515, y: 690},
+  {x: 1485, y: 750},
+  {x: 1390, y: 790}
 ];
 
 function formatTime(msTime) {
