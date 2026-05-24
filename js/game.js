@@ -10,7 +10,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: { 
-            // Purple debug boxes are ON
+            // Purple debug boxes are ON so you can map out the walls
             debug: true 
         }
     },
@@ -33,8 +33,8 @@ let startLineX = 725;
 let trackTextureCanvas;
 
 function preload() {
-    // Make sure this matches your file name exactly (case-sensitive on GitHub!)
-    this.load.image('trackImg', 'track.jpg'); 
+    // 🚨 THIS MUST EXACTLY MATCH YOUR GITHUB FILE NAME (Case-sensitive!) 🚨
+    this.load.image('trackImg', 'track.png'); 
 }
 
 function create() {
@@ -61,7 +61,7 @@ function create() {
         { x: -25, y: 450, w: 50, h: 900 },  
         { x: 1625, y: 450, w: 50, h: 900 }, 
 
-        // Inner Islands (Tweak these numbers!)
+        // Inner Islands (Tweak these numbers based on the purple boxes!)
         { x: 400, y: 550, w: 550, h: 100 }, 
         { x: 1200, y: 400, w: 550, h: 150 },
         { x: 800, y: 250, w: 400, h: 150 }, 
@@ -96,7 +96,7 @@ function create() {
     // ==========================================
     // 3. SPAWN PLAYER ON THE GRID
     // ==========================================
-    // Adjusted to spawn at the bottom grid, facing LEFT
+    // Spawning on the grid, facing LEFT
     playerCar = this.physics.add.sprite(820, 810, 'f1-sprite');
     playerCar.angle = 180; 
     playerCar.body.setBounce(0.4); 
@@ -115,11 +115,11 @@ function update(time) {
         trackTextureCanvas.getPixel(Math.floor(playerCar.x), Math.floor(playerCar.y), pixel);
         
         if (pixel.g > 100 || (pixel.r > 150 && pixel.g > 120)) {
-            // OFF TRACK
+            // OFF TRACK (Grass/Sand): Slow down
             playerCar.body.setDrag(800);
             playerCar.body.setMaxVelocity(250);
         } else {
-            // ON ASPHALT
+            // ON ASPHALT: Full speed
             playerCar.body.setDrag(150);
             playerCar.body.setMaxVelocity(600);
         }
