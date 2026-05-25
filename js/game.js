@@ -218,59 +218,6 @@ function getProgressScore(lapNumber, targetWP, x, y) {
     return ((lapNumber - 1) * waypoints.length) + previousWP + segmentProgress;
 }
 
-// This is the important ranking fix.
-// It measures the car's actual nearest point on the racing line,
-// instead of trusting whatever waypoint the car was targeting.
-function getNearestTrackProgress(x, y) {
-    let bestDistance = Infinity;
-    let bestProgress = 0;
-
-    for (let i = 0; i < waypoints.length; i++) {
-        let a = waypoints[i];
-        let b = waypoints[(i + 1) % waypoints.length];
-
-        let abX = b.x - a.x;
-        let abY = b.y - a.y;
-
-        let apX = x - a.x;
-        let apY = y - a.y;
-
-        let abLengthSq = abX * abX + abY * abY;
-
-        if (abLengthSq === 0) {
-            continue;
-        }
-
-        let t = (apX * abX + apY * abY) / abLengthSq;
-        t = Phaser.Math.Clamp(t, 0, 1);
-
-        let closestX = a.x + abX * t;
-        let closestY = a.y + abY * t;
-
-        let distance = Phaser.Math.Distance.Between(
-            x,
-            y,
-            closestX,
-            closestY
-        );
-
-        if (distance < bestDistance) {
-            bestDistance = distance;
-            bestProgress = i + t;
-        }
-    }
-
-    return bestProgress;
-}
-
-function getActualRaceProgress(carLaps, x, y, isFinished = false) {
-    if (isFinished) {
-        return maxLaps * waypoints.length;
-    }
-
-    return ((carLaps - 1) * waypoints.length) + getNearestTrackProgress(x, y);
-}
-
 function updatePlayerTrackProgress() {
     let target = waypoints[playerTargetWP];
 
@@ -307,6 +254,64 @@ function safeHideRacePrompt() {
     if (typeof hideRacePrompt === "function") {
         hideRacePrompt();
     }
+}
+
+function stopAllCars() {
+    currentSpeed = 0;
+
+    if (playerCar && playerCar.body) {
+        playerCar.body.setVelocity(0);
+        playerCar.body.setAngularVelocity(0);
+    }
+
+    if (cpuGroup) {
+        cpuGroup.children.iterate(cpu => {
+            if (cpu && cpu.body) {
+                cpu.body.setVelocity(0);
+                cpu.body.setAngularVelocity(0);
+            }
+        });
+    }
+}
+
+function triggerAIRaceWin(time) {
+    raceFinished = true;
+
+    document.getElementById('lap-counter').innerText = "FINISH";
+
+    stopAllCars();
+
+    let totalRaceTime = time - startTime;
+
+    document.getElementById('res-position').style.color = '#e10600';
+    document.getElementById('res-position').innerText = "YOU LOSE";
+
+    document.getElementById('res-final').innerText = formatTime(totalRaceTime);
+    document.getElementById('res-best').innerText = formatTime(bestLapTime);
+    document.getElementById('results-modal').classList.add('show');
+}
+
+function triggerRaceFinish(time) {
+    raceFinished = true;
+
+    document.getElementById('lap-counter').innerText = "FINISH";
+
+    stopAllCars();
+
+    let totalRaceTime = time - startTime;
+
+    document.getElementById('res-position').style.color = '#fff';
+    document.getElementById('res-position').innerText = "POSITION: 1st 🏆";
+
+    if (totalRaceTime < bestRaceTime) {
+        bestRaceTime = totalRaceTime;
+        localStorage.setItem('f1_bestRace', bestRaceTime);
+        document.getElementById('best-race').innerText = formatTime(bestRaceTime);
+    }
+
+    document.getElementById('res-final').innerText = formatTime(totalRaceTime);
+    document.getElementById('res-best').innerText = formatTime(bestLapTime);
+    document.getElementById('results-modal').classList.add('show');
 }
 
 function create() {
@@ -482,125 +487,6 @@ function create() {
     }, 1000);
 }
 
-function calculatePlayerPosition() {
-    let playerScore = getActualRaceProgress(
-        laps,
-        playerCar.x,
-        playerCar.y,
-        laps > maxLaps
-    );
-
-    let rank = 1;
-
-    cpuGroup.children.iterate((cpu) => {
-        if (!cpu) {
-            return;
-        }
-
-        let cpuScore = getActualRaceProgress(
-            cpu.laps,
-            cpu.x,
-            cpu.y,
-            cpu.finished
-        );
-
-        if (cpuScore > playerScore) {
-            rank++;
-        }
-    });
-
-    return rank;
-}
-
-function getPositionSuffix(position) {
-    if (position === 1) {
-        return "st";
-    }
-
-    if (position === 2) {
-        return "nd";
-    }
-
-    if (position === 3) {
-        return "rd";
-    }
-
-    return "th";
-}
-
-function stopAllCars() {
-    currentSpeed = 0;
-
-    if (playerCar && playerCar.body) {
-        playerCar.body.setVelocity(0);
-        playerCar.body.setAngularVelocity(0);
-    }
-
-    if (cpuGroup) {
-        cpuGroup.children.iterate(cpu => {
-            if (cpu && cpu.body) {
-                cpu.body.setVelocity(0);
-                cpu.body.setAngularVelocity(0);
-            }
-        });
-    }
-}
-
-function triggerAIRaceWin(time) {
-    let finalRank = calculatePlayerPosition();
-
-    raceFinished = true;
-
-    document.getElementById('lap-counter').innerText = "FINISH";
-
-    stopAllCars();
-
-    let totalRaceTime = time - startTime;
-    let suffix = getPositionSuffix(finalRank);
-
-    document.getElementById('res-position').style.color = '#e10600';
-    document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
-
-    document.getElementById('res-final').innerText = formatTime(totalRaceTime);
-    document.getElementById('res-best').innerText = formatTime(bestLapTime);
-    document.getElementById('results-modal').classList.add('show');
-}
-
-function triggerRaceFinish(time) {
-    laps = maxLaps + 1;
-    playerTrackProgress = maxLaps * waypoints.length;
-
-    let finalRank = calculatePlayerPosition();
-
-    raceFinished = true;
-
-    document.getElementById('lap-counter').innerText = "FINISH";
-
-    stopAllCars();
-
-    let totalRaceTime = time - startTime;
-    let suffix = getPositionSuffix(finalRank);
-
-    document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
-
-    if (finalRank === 1) {
-        document.getElementById('res-position').style.color = '#fff';
-        document.getElementById('res-position').innerText += " 🏆";
-
-        if (totalRaceTime < bestRaceTime) {
-            bestRaceTime = totalRaceTime;
-            localStorage.setItem('f1_bestRace', bestRaceTime);
-            document.getElementById('best-race').innerText = formatTime(bestRaceTime);
-        }
-    } else {
-        document.getElementById('res-position').style.color = '#e10600';
-    }
-
-    document.getElementById('res-final').innerText = formatTime(totalRaceTime);
-    document.getElementById('res-best').innerText = formatTime(bestLapTime);
-    document.getElementById('results-modal').classList.add('show');
-}
-
 function update(time) {
     if (!raceStarted || raceFinished) {
         stopAllCars();
@@ -720,6 +606,7 @@ function update(time) {
                 cpu.trackProgress = maxLaps * waypoints.length;
                 cpu.body.setVelocity(0);
 
+                // If any AI finishes first, the player loses.
                 if (!raceFinished) {
                     triggerAIRaceWin(time);
                 }
@@ -816,6 +703,7 @@ function update(time) {
         checkpointReached = false;
 
         if (laps > maxLaps) {
+            // If player finishes before any AI, player wins.
             triggerRaceFinish(time);
         } else {
             document.getElementById('lap-counter').innerText = laps;
