@@ -290,10 +290,10 @@ function create() {
 
     cpuGroup = this.physics.add.group();
 
-    const spawnCPU = (x, y, color, speed, laneOffset = 0, startDelay = 0) => {
+    const spawnCPU = (x, y, color, speed, laneOffset = 0, startDelay = 0, startingTargetWP = 2) => {
         let cpu = cpuGroup.create(x, y, color);
 
-        cpu.targetWP = 2;
+        cpu.targetWP = startingTargetWP;
         cpu.baseSpeed = speed;
         cpu.speed = speed;
 
@@ -317,16 +317,17 @@ function create() {
         cpu.body.setDrag(20);
     };
 
-    // Faster AI target: roughly 12–14 seconds per lap.
-    // Tune these by +/- 20 if they are too fast or too slow.
-    spawnCPU(870, 767, 'car-blue', 560, -18, 0);
-    spawnCPU(970, 767, 'car-green', 545, 18, 250);
-    spawnCPU(1070, 767, 'car-orange', 535, -10, 500);
-    spawnCPU(1170, 767, 'car-pink', 520, 10, 750);
+    // Slowed down 5–7% from the previous version.
+    // Also each car now gets a better starting target waypoint.
+    // This fixes the first two cars swirling at launch.
+    spawnCPU(870, 767, 'car-blue', 525, -18, 0, 3);
+    spawnCPU(970, 767, 'car-green', 512, 18, 250, 3);
+    spawnCPU(1070, 767, 'car-orange', 502, -10, 500, 2);
+    spawnCPU(1170, 767, 'car-pink', 490, 10, 750, 2);
 
-    spawnCPU(900, 813, 'car-yellow', 555, 22, 150);
-    spawnCPU(1000, 813, 'car-purple', 540, -22, 400);
-    spawnCPU(1100, 813, 'car-cyan', 530, 0, 650);
+    spawnCPU(900, 813, 'car-yellow', 520, 22, 150, 3);
+    spawnCPU(1000, 813, 'car-purple', 508, -22, 400, 3);
+    spawnCPU(1100, 813, 'car-cyan', 498, 0, 650, 2);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
