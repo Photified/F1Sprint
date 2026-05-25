@@ -49,14 +49,12 @@ let mobileRight = false;
 let mobileGas = false;
 let mobileBrake = false;
 
-// Hidden player waypoint tracking for accurate race position
+// Hidden player waypoint tracking for normal live progress
 let playerTargetWP = 2;
 let playerTrackProgress = 0;
 
 // AI tuning
 const CPU_WAYPOINT_REACH_RADIUS = 48;
-
-// Slower, more human AI cornering.
 const CPU_SHARP_TURN_SLOWDOWN = 0.58;
 const CPU_MEDIUM_TURN_SLOWDOWN = 0.74;
 
@@ -220,6 +218,59 @@ function getProgressScore(lapNumber, targetWP, x, y) {
     return ((lapNumber - 1) * waypoints.length) + previousWP + segmentProgress;
 }
 
+// This is the important ranking fix.
+// It measures the car's actual nearest point on the racing line,
+// instead of trusting whatever waypoint the car was targeting.
+function getNearestTrackProgress(x, y) {
+    let bestDistance = Infinity;
+    let bestProgress = 0;
+
+    for (let i = 0; i < waypoints.length; i++) {
+        let a = waypoints[i];
+        let b = waypoints[(i + 1) % waypoints.length];
+
+        let abX = b.x - a.x;
+        let abY = b.y - a.y;
+
+        let apX = x - a.x;
+        let apY = y - a.y;
+
+        let abLengthSq = abX * abX + abY * abY;
+
+        if (abLengthSq === 0) {
+            continue;
+        }
+
+        let t = (apX * abX + apY * abY) / abLengthSq;
+        t = Phaser.Math.Clamp(t, 0, 1);
+
+        let closestX = a.x + abX * t;
+        let closestY = a.y + abY * t;
+
+        let distance = Phaser.Math.Distance.Between(
+            x,
+            y,
+            closestX,
+            closestY
+        );
+
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestProgress = i + t;
+        }
+    }
+
+    return bestProgress;
+}
+
+function getActualRaceProgress(carLaps, x, y, isFinished = false) {
+    if (isFinished) {
+        return maxLaps * waypoints.length;
+    }
+
+    return ((carLaps - 1) * waypoints.length) + getNearestTrackProgress(x, y);
+}
+
 function updatePlayerTrackProgress() {
     let target = waypoints[playerTargetWP];
 
@@ -320,8 +371,8 @@ function create() {
     };
 
     // Slower AI version.
-    // All start delays are 0 so the player does not plow into parked cars.
-    // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid the starting swirl.
+    // No start delays, so the player does not plow into parked cars.
+    // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid starting swirl.
     spawnCPU(870, 767, 'car-blue', 400, -18, 0, 3);
     spawnCPU(970, 767, 'car-green', 392, 18, 0, 3);
     spawnCPU(1070, 767, 'car-orange', 385, -10, 0, 2);
@@ -344,9 +395,6 @@ function create() {
     prevY = playerCar.y;
 
     this.physics.add.collider(playerCar, cpuGroup);
-
-    // CPU cars should not hard-collide with each other.
-    // This prevents start-line pileups.
     this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
@@ -435,13 +483,13 @@ function create() {
 }
 
 function calculatePlayerPosition() {
-    // Make sure the player's progress is fresh before calculating rank.
-    // This fixes false results like showing 8th when the player is visually 4th.
-    if (playerCar) {
-        updatePlayerTrackProgress();
-    }
+    let playerScore = getActualRaceProgress(
+        laps,
+        playerCar.x,
+        playerCar.y,
+        laps > maxLaps
+    );
 
-    let playerScore = playerTrackProgress;
     let rank = 1;
 
     cpuGroup.children.iterate((cpu) => {
@@ -449,11 +497,12 @@ function calculatePlayerPosition() {
             return;
         }
 
-        let cpuScore = cpu.trackProgress || 0;
-
-        if (cpu.finished) {
-            cpuScore = maxLaps * waypoints.length;
-        }
+        let cpuScore = getActualRaceProgress(
+            cpu.laps,
+            cpu.x,
+            cpu.y,
+            cpu.finished
+        );
 
         if (cpuScore > playerScore) {
             rank++;
@@ -463,36 +512,51 @@ function calculatePlayerPosition() {
     return rank;
 }
 
-function triggerAIRaceWin(time) {
-    // Update player progress one final time before freezing the race.
-    updatePlayerTrackProgress();
+function getPositionSuffix(position) {
+    if (position === 1) {
+        return "st";
+    }
 
+    if (position === 2) {
+        return "nd";
+    }
+
+    if (position === 3) {
+        return "rd";
+    }
+
+    return "th";
+}
+
+function stopAllCars() {
+    currentSpeed = 0;
+
+    if (playerCar && playerCar.body) {
+        playerCar.body.setVelocity(0);
+        playerCar.body.setAngularVelocity(0);
+    }
+
+    if (cpuGroup) {
+        cpuGroup.children.iterate(cpu => {
+            if (cpu && cpu.body) {
+                cpu.body.setVelocity(0);
+                cpu.body.setAngularVelocity(0);
+            }
+        });
+    }
+}
+
+function triggerAIRaceWin(time) {
     let finalRank = calculatePlayerPosition();
 
     raceFinished = true;
 
     document.getElementById('lap-counter').innerText = "FINISH";
 
-    currentSpeed = 0;
-    playerCar.body.setVelocity(0);
-
-    cpuGroup.children.iterate(cpu => {
-        if (cpu && cpu.body) {
-            cpu.body.setVelocity(0);
-        }
-    });
+    stopAllCars();
 
     let totalRaceTime = time - startTime;
-
-    let suffix = "th";
-
-    if (finalRank === 1) {
-        suffix = "st";
-    } else if (finalRank === 2) {
-        suffix = "nd";
-    } else if (finalRank === 3) {
-        suffix = "rd";
-    }
+    let suffix = getPositionSuffix(finalRank);
 
     document.getElementById('res-position').style.color = '#e10600';
     document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
@@ -503,37 +567,19 @@ function triggerAIRaceWin(time) {
 }
 
 function triggerRaceFinish(time) {
-    // Update player progress one final time before result calculation.
-    updatePlayerTrackProgress();
+    laps = maxLaps + 1;
+    playerTrackProgress = maxLaps * waypoints.length;
+
+    let finalRank = calculatePlayerPosition();
 
     raceFinished = true;
 
     document.getElementById('lap-counter').innerText = "FINISH";
 
-    currentSpeed = 0;
-    playerCar.body.setVelocity(0);
-
-    cpuGroup.children.iterate(cpu => {
-        if (cpu && cpu.body) {
-            cpu.body.setVelocity(0);
-        }
-    });
+    stopAllCars();
 
     let totalRaceTime = time - startTime;
-
-    playerTrackProgress = maxLaps * waypoints.length;
-
-    let finalRank = calculatePlayerPosition();
-
-    let suffix = "th";
-
-    if (finalRank === 1) {
-        suffix = "st";
-    } else if (finalRank === 2) {
-        suffix = "nd";
-    } else if (finalRank === 3) {
-        suffix = "rd";
-    }
+    let suffix = getPositionSuffix(finalRank);
 
     document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
 
@@ -557,18 +603,7 @@ function triggerRaceFinish(time) {
 
 function update(time) {
     if (!raceStarted || raceFinished) {
-        if (playerCar && playerCar.body) {
-            playerCar.body.setVelocity(0);
-        }
-
-        if (cpuGroup) {
-            cpuGroup.children.iterate(cpu => {
-                if (cpu && cpu.body) {
-                    cpu.body.setVelocity(0);
-                }
-            });
-        }
-
+        stopAllCars();
         return;
     }
 
@@ -592,7 +627,6 @@ function update(time) {
             target.y
         );
 
-        // Bigger reach radius makes the AI smoother and less twitchy.
         if (dist < CPU_WAYPOINT_REACH_RADIUS) {
             cpu.targetWP++;
 
@@ -654,7 +688,6 @@ function update(time) {
             targetSpeed = 0;
         }
 
-        // Slower corner behavior so AI does not feel faster than the player.
         if (Math.abs(angleDiff) > 0.9) {
             targetSpeed *= CPU_SHARP_TURN_SLOWDOWN;
         } else if (Math.abs(angleDiff) > 0.45) {
@@ -687,8 +720,6 @@ function update(time) {
                 cpu.trackProgress = maxLaps * waypoints.length;
                 cpu.body.setVelocity(0);
 
-                // End the race immediately when the first AI car finishes.
-                // This restores the "first across the line freezes the race" behavior.
                 if (!raceFinished) {
                     triggerAIRaceWin(time);
                 }
@@ -701,9 +732,6 @@ function update(time) {
     if (raceFinished) {
         return;
     }
-
-    // Update player progress before final rank checks.
-    updatePlayerTrackProgress();
 
     // --- PLAYER MASK LOGIC ---
     let x = Math.floor(playerCar.x);
@@ -724,8 +752,6 @@ function update(time) {
             playerCar.y = prevY;
             currentSpeed = -currentSpeed * 0.5;
         } else if (r > 100 && g < 100 && b < 100) {
-            // Softer grass/sand penalty.
-            // Old value was 100, which was very punishing.
             maxSpeed = 275;
         } else {
             maxSpeed = 450;
