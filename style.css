@@ -584,3 +584,80 @@ select {
         font-size: 50px !important;
     }
 }
+
+/* --- EXTRA-LARGE MOBILE TOUCH TARGETS ---
+   The visible buttons still look like controls, but their clickable areas fill
+   almost the entire side columns in mobile landscape. */
+@media screen and (orientation: landscape) and (pointer: coarse) {
+    .left-controls {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+        padding: 6px 4px !important;
+        align-items: stretch !important;
+        justify-items: stretch !important;
+    }
+
+    .left-controls button {
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        border-radius: 18px !important;
+        font-size: 34px !important;
+        background: rgba(50, 50, 50, 0.34) !important;
+        border: 2px solid rgba(255, 255, 255, 0.22) !important;
+        box-shadow: inset 0 0 0 999px rgba(255,255,255,0.02), 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .left-controls button::before {
+        content: "";
+        position: absolute;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: rgba(50, 50, 50, 0.72);
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        z-index: -1;
+    }
+
+    .side-controls button {
+        position: relative;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .right-controls {
+        padding: 6px 4px !important;
+    }
+}
+
+/* Make the giant steering zones work even on short mobile browser viewports. */
+@media screen and (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
+    .left-controls {
+        width: 150px !important;
+        height: 100% !important;
+    }
+
+    .left-controls button {
+        height: calc(100dvh - 70px) !important;
+        max-height: 100% !important;
+    }
+}
+
+@media screen and (max-height: 430px) and (orientation: landscape) and (pointer: coarse) {
+    .left-controls {
+        width: 130px !important;
+    }
+
+    .left-controls button {
+        height: calc(100dvh - 58px) !important;
+        max-height: 100% !important;
+        font-size: 30px !important;
+        border-radius: 16px !important;
+    }
+
+    .left-controls button::before {
+        width: 58px;
+        height: 58px;
+    }
+}
