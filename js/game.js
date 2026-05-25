@@ -357,34 +357,58 @@ function create() {
             return;
         }
 
-        btn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+        let isHeld = false;
+
+        const press = (e) => {
+            if (e) {
+                e.preventDefault();
+            }
+
+            isHeld = true;
             keydown();
-        });
 
-        btn.addEventListener('touchend', (e) => {
-            e.preventDefault();
+            if (e && e.pointerId !== undefined && btn.setPointerCapture) {
+                try {
+                    btn.setPointerCapture(e.pointerId);
+                } catch (err) {
+                    // Some mobile browsers may not allow capture in every case.
+                }
+            }
+        };
+
+        const release = (e) => {
+            if (e) {
+                e.preventDefault();
+            }
+
+            if (!isHeld) {
+                return;
+            }
+
+            isHeld = false;
             keyup();
-        });
 
-        btn.addEventListener('touchcancel', (e) => {
-            e.preventDefault();
-            keyup();
-        });
+            if (e && e.pointerId !== undefined && btn.releasePointerCapture) {
+                try {
+                    btn.releasePointerCapture(e.pointerId);
+                } catch (err) {
+                    // Ignore if the pointer was already released.
+                }
+            }
+        };
 
-        btn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            keydown();
-        });
+        // Pointer events give better mobile behavior than separate touch/mouse
+        // events because the button remains held even if your thumb drifts a bit.
+        btn.addEventListener('pointerdown', press);
+        btn.addEventListener('pointerup', release);
+        btn.addEventListener('pointercancel', release);
+        btn.addEventListener('lostpointercapture', release);
 
-        btn.addEventListener('mouseup', (e) => {
-            e.preventDefault();
-            keyup();
-        });
-
+        // Desktop fallback.
         btn.addEventListener('mouseleave', (e) => {
-            e.preventDefault();
-            keyup();
+            if (e.pointerType === 'mouse') {
+                release(e);
+            }
         });
     };
 
