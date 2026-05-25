@@ -58,6 +58,25 @@ const CPU_WAYPOINT_REACH_RADIUS = 48;
 const CPU_SHARP_TURN_SLOWDOWN = 0.58;
 const CPU_MEDIUM_TURN_SLOWDOWN = 0.74;
 
+// --- AUDIO STATE ---
+let audioCtx = null;
+let masterGain = null;
+
+let playerEngineOsc = null;
+let playerEngineGain = null;
+let playerTopOsc = null;
+let playerTopGain = null;
+
+let aiEngineOsc = null;
+let aiEngineGain = null;
+
+let squealSource = null;
+let squealGain = null;
+let squealFilter = null;
+
+let audioReady = false;
+let soundUnlocked = false;
+
 // --- RACING LINE ---
 const waypoints = [
     // Bottom straight
@@ -256,6 +275,269 @@ function safeHideRacePrompt() {
     }
 }
 
+// --- SIMPLE SYNTH AUDIO ---
+function initAudio() {
+    if (audioReady) {
+        return;
+    }
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+        return;
+    }
+
+    audioCtx = new AudioContextClass();
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.55;
+    masterGain.connect(audioCtx.destination);
+
+    // Player acceleration engine sound
+    playerEngineOsc = audioCtx.createOscillator();
+    playerEngineOsc.type = "sawtooth";
+
+    const playerEngineFilter = audioCtx.createBiquadFilter();
+    playerEngineFilter.type = "lowpass";
+    playerEngineFilter.frequency.value = 700;
+
+    playerEngineGain = audioCtx.createGain();
+    playerEngineGain.gain.value = 0;
+
+    playerEngineOsc.connect(playerEngineFilter);
+    playerEngineFilter.connect(playerEngineGain);
+    playerEngineGain.connect(masterGain);
+    playerEngineOsc.start();
+
+    // Player top speed layer
+    playerTopOsc = audioCtx.createOscillator();
+    playerTopOsc.type = "square";
+
+    const playerTopFilter = audioCtx.createBiquadFilter();
+    playerTopFilter.type = "lowpass";
+    playerTopFilter.frequency.value = 1200;
+
+    playerTopGain = audioCtx.createGain();
+    playerTopGain.gain.value = 0;
+
+    playerTopOsc.connect(playerTopFilter);
+    playerTopFilter.connect(playerTopGain);
+    playerTopGain.connect(masterGain);
+    playerTopOsc.start();
+
+    // Other cars engine hum, quieter
+    aiEngineOsc = audioCtx.createOscillator();
+    aiEngineOsc.type = "sawtooth";
+
+    const aiEngineFilter = audioCtx.createBiquadFilter();
+    aiEngineFilter.type = "lowpass";
+    aiEngineFilter.frequency.value = 520;
+
+    aiEngineGain = audioCtx.createGain();
+    aiEngineGain.gain.value = 0;
+
+    aiEngineOsc.connect(aiEngineFilter);
+    aiEngineFilter.connect(aiEngineGain);
+    aiEngineGain.connect(masterGain);
+    aiEngineOsc.start();
+
+    // Tire squeal noise
+    const noiseBuffer = audioCtx.createBuffer(
+        1,
+        audioCtx.sampleRate,
+        audioCtx.sampleRate
+    );
+
+    const noiseData = noiseBuffer.getChannelData(0);
+
+    for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = Math.random() * 2 - 1;
+    }
+
+    squealSource = audioCtx.createBufferSource();
+    squealSource.buffer = noiseBuffer;
+    squealSource.loop = true;
+
+    squealFilter = audioCtx.createBiquadFilter();
+    squealFilter.type = "bandpass";
+    squealFilter.frequency.value = 1600;
+    squealFilter.Q.value = 7;
+
+    squealGain = audioCtx.createGain();
+    squealGain.gain.value = 0;
+
+    squealSource.connect(squealFilter);
+    squealFilter.connect(squealGain);
+    squealGain.connect(masterGain);
+    squealSource.start();
+
+    audioReady = true;
+}
+
+function unlockAudio() {
+    initAudio();
+
+    if (!audioCtx) {
+        return;
+    }
+
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+
+    soundUnlocked = true;
+}
+
+function setGainSmooth(gainNode, value, speed = 0.05) {
+    if (!audioReady || !gainNode) {
+        return;
+    }
+
+    gainNode.gain.setTargetAtTime(
+        value,
+        audioCtx.currentTime,
+        speed
+    );
+}
+
+function setFreqSmooth(oscNode, value, speed = 0.04) {
+    if (!audioReady || !oscNode) {
+        return;
+    }
+
+    oscNode.frequency.setTargetAtTime(
+        value,
+        audioCtx.currentTime,
+        speed
+    );
+}
+
+function playTone(freq, duration = 0.12, type = "square", volume = 0.15, delay = 0) {
+    if (!audioReady || !audioCtx || audioCtx.state === "suspended") {
+        return;
+    }
+
+    const startAt = audioCtx.currentTime + delay;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startAt);
+
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+
+    osc.start(startAt);
+    osc.stop(startAt + duration + 0.04);
+}
+
+function playLightSound(step) {
+    playTone(220 + step * 35, 0.1, "square", 0.14);
+}
+
+function playGoSound() {
+    playTone(520, 0.12, "square", 0.18, 0);
+    playTone(780, 0.18, "square", 0.16, 0.08);
+}
+
+function playVictorySound() {
+    playTone(440, 0.12, "square", 0.14, 0);
+    playTone(660, 0.12, "square", 0.14, 0.13);
+    playTone(880, 0.22, "square", 0.18, 0.26);
+    playTone(1320, 0.28, "triangle", 0.14, 0.5);
+}
+
+function playDefeatSound() {
+    playTone(330, 0.18, "sawtooth", 0.15, 0);
+    playTone(240, 0.2, "sawtooth", 0.14, 0.2);
+    playTone(150, 0.35, "sawtooth", 0.15, 0.42);
+}
+
+function updateRaceSounds(isPlayerTurning, aiTurnAmount = 0) {
+    if (!audioReady || !audioCtx) {
+        return;
+    }
+
+    if (!raceStarted || raceFinished) {
+        setGainSmooth(playerEngineGain, 0, 0.03);
+        setGainSmooth(playerTopGain, 0, 0.03);
+        setGainSmooth(aiEngineGain, 0, 0.03);
+        setGainSmooth(squealGain, 0, 0.03);
+        return;
+    }
+
+    const speedRatio = Phaser.Math.Clamp(Math.abs(currentSpeed) / 450, 0, 1);
+
+    // Player acceleration/engine
+    const playerEngineVolume = 0.025 + speedRatio * 0.13;
+    const playerEngineFreq = 85 + speedRatio * 310;
+
+    setFreqSmooth(playerEngineOsc, playerEngineFreq);
+    setGainSmooth(playerEngineGain, playerEngineVolume);
+
+    // Top speed layer comes in near max speed
+    const topAmount = Phaser.Math.Clamp((speedRatio - 0.82) / 0.18, 0, 1);
+    setFreqSmooth(playerTopOsc, 260 + speedRatio * 520);
+    setGainSmooth(playerTopGain, topAmount * 0.045);
+
+    // Other cars: average nearby engine sound, quieter than player
+    let totalAiSpeed = 0;
+    let aiCount = 0;
+
+    if (cpuGroup) {
+        cpuGroup.children.iterate(cpu => {
+            if (!cpu || !cpu.body || cpu.finished) {
+                return;
+            }
+
+            const v = Phaser.Math.Distance.Between(
+                0,
+                0,
+                cpu.body.velocity.x,
+                cpu.body.velocity.y
+            );
+
+            totalAiSpeed += v;
+            aiCount++;
+        });
+    }
+
+    const avgAiSpeed = aiCount > 0 ? totalAiSpeed / aiCount : 0;
+    const aiRatio = Phaser.Math.Clamp(avgAiSpeed / 450, 0, 1);
+
+    setFreqSmooth(aiEngineOsc, 75 + aiRatio * 260);
+    setGainSmooth(aiEngineGain, aiRatio * 0.055);
+
+    // Tire squeal
+    const playerSqueal = isPlayerTurning && Math.abs(currentSpeed) > 85
+        ? Phaser.Math.Clamp(speedRatio * 0.12, 0, 0.12)
+        : 0;
+
+    const aiSqueal = Phaser.Math.Clamp(aiTurnAmount * 0.025, 0, 0.035);
+    const squealVolume = Math.max(playerSqueal, aiSqueal);
+
+    if (squealFilter) {
+        squealFilter.frequency.setTargetAtTime(
+            1350 + speedRatio * 700,
+            audioCtx.currentTime,
+            0.04
+        );
+    }
+
+    setGainSmooth(squealGain, squealVolume, 0.025);
+}
+
+function stopAllSounds() {
+    setGainSmooth(playerEngineGain, 0, 0.02);
+    setGainSmooth(playerTopGain, 0, 0.02);
+    setGainSmooth(aiEngineGain, 0, 0.02);
+    setGainSmooth(squealGain, 0, 0.02);
+}
+
 function stopAllCars() {
     currentSpeed = 0;
 
@@ -272,6 +554,8 @@ function stopAllCars() {
             }
         });
     }
+
+    stopAllSounds();
 }
 
 function triggerAIRaceWin(time) {
@@ -289,6 +573,8 @@ function triggerAIRaceWin(time) {
     document.getElementById('res-final').innerText = formatTime(totalRaceTime);
     document.getElementById('res-best').innerText = formatTime(bestLapTime);
     document.getElementById('results-modal').classList.add('show');
+
+    playDefeatSound();
 }
 
 function triggerRaceFinish(time) {
@@ -312,9 +598,17 @@ function triggerRaceFinish(time) {
     document.getElementById('res-final').innerText = formatTime(totalRaceTime);
     document.getElementById('res-best').innerText = formatTime(bestLapTime);
     document.getElementById('results-modal').classList.add('show');
+
+    playVictorySound();
 }
 
 function create() {
+    // Try to unlock sound as early as the browser allows.
+    // Mobile browsers usually require one tap before audio can play.
+    window.addEventListener('pointerdown', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio, { passive: true });
+    window.addEventListener('keydown', unlockAudio);
+
     bestLapTime = parseFloat(localStorage.getItem('f1_bestLap')) || Infinity;
     bestRaceTime = parseFloat(localStorage.getItem('f1_bestRace')) || Infinity;
 
@@ -413,6 +707,7 @@ function create() {
 
         const press = (e) => {
             e.preventDefault();
+            unlockAudio();
 
             if (e.pointerId !== undefined && btn.setPointerCapture) {
                 try {
@@ -460,6 +755,8 @@ function create() {
         if (lightStep <= 5) {
             document.getElementById(`light-${lightStep}`).classList.add('on');
 
+            playLightSound(lightStep);
+
             if (lightStep <= 2) {
                 safeShowRacePrompt("YOU ARE THE RED CAR");
             } else {
@@ -475,6 +772,7 @@ function create() {
             document.getElementById('start-lights').style.display = 'none';
 
             safeShowRacePrompt("GO!", true);
+            playGoSound();
 
             setTimeout(() => {
                 safeHideRacePrompt();
@@ -492,6 +790,8 @@ function update(time) {
         stopAllCars();
         return;
     }
+
+    let aiTurnAmount = 0;
 
     // --- CPU AI LOGIC ---
     cpuGroup.children.iterate((cpu) => {
@@ -553,6 +853,8 @@ function update(time) {
         );
 
         let angleDiff = Phaser.Math.Angle.Wrap(targetAngle - cpu.rotation);
+
+        aiTurnAmount = Math.max(aiTurnAmount, Math.abs(angleDiff));
 
         let turnSpeed = 0.12;
 
@@ -663,11 +965,14 @@ function update(time) {
     playerCar.body.setAngularVelocity(0);
 
     let turnSpeed = currentSpeed > 50 ? 250 : 150;
+    let isPlayerTurning = false;
 
     if (cursors.left.isDown || mobileLeft) {
         playerCar.body.setAngularVelocity(-turnSpeed);
+        isPlayerTurning = true;
     } else if (cursors.right.isDown || mobileRight) {
         playerCar.body.setAngularVelocity(turnSpeed);
+        isPlayerTurning = true;
     }
 
     this.physics.velocityFromRotation(
@@ -676,6 +981,7 @@ function update(time) {
         playerCar.body.velocity
     );
 
+    updateRaceSounds(isPlayerTurning, aiTurnAmount);
     updatePlayerTrackProgress();
 
     // --- PLAYER LAP LOGIC ---
