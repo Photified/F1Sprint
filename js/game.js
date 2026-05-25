@@ -76,6 +76,7 @@ let squealFilter = null;
 
 let audioReady = false;
 let soundUnlocked = false;
+let soundEnabled = false;
 
 // --- RACING LINE ---
 const waypoints = [
@@ -290,7 +291,7 @@ function initAudio() {
     audioCtx = new AudioContextClass();
 
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.55;
+    masterGain.gain.value = 0;
     masterGain.connect(audioCtx.destination);
 
     // Player acceleration engine sound
@@ -374,7 +375,7 @@ function initAudio() {
     audioReady = true;
 }
 
-function unlockAudio() {
+function enableAudio() {
     initAudio();
 
     if (!audioCtx) {
@@ -386,10 +387,46 @@ function unlockAudio() {
     }
 
     soundUnlocked = true;
+    soundEnabled = true;
+
+    if (masterGain) {
+        masterGain.gain.setTargetAtTime(0.55, audioCtx.currentTime, 0.03);
+    }
+
+    const audioBtn = document.getElementById('btn-audio');
+
+    if (audioBtn) {
+        audioBtn.textContent = "Audio: ON";
+        audioBtn.classList.add('on');
+    }
+}
+
+function disableAudio() {
+    soundEnabled = false;
+    stopAllSounds();
+
+    if (audioCtx && masterGain) {
+        masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+    }
+
+    const audioBtn = document.getElementById('btn-audio');
+
+    if (audioBtn) {
+        audioBtn.textContent = "Audio: OFF";
+        audioBtn.classList.remove('on');
+    }
+}
+
+function toggleAudio() {
+    if (soundEnabled) {
+        disableAudio();
+    } else {
+        enableAudio();
+    }
 }
 
 function setGainSmooth(gainNode, value, speed = 0.05) {
-    if (!audioReady || !gainNode) {
+    if (!audioReady || !gainNode || !audioCtx) {
         return;
     }
 
@@ -401,7 +438,7 @@ function setGainSmooth(gainNode, value, speed = 0.05) {
 }
 
 function setFreqSmooth(oscNode, value, speed = 0.04) {
-    if (!audioReady || !oscNode) {
+    if (!audioReady || !oscNode || !audioCtx) {
         return;
     }
 
@@ -413,7 +450,7 @@ function setFreqSmooth(oscNode, value, speed = 0.04) {
 }
 
 function playTone(freq, duration = 0.12, type = "square", volume = 0.15, delay = 0) {
-    if (!audioReady || !audioCtx || audioCtx.state === "suspended") {
+    if (!soundEnabled || !audioReady || !audioCtx || audioCtx.state === "suspended") {
         return;
     }
 
@@ -458,7 +495,7 @@ function playDefeatSound() {
 }
 
 function updateRaceSounds(isPlayerTurning, aiTurnAmount = 0) {
-    if (!audioReady || !audioCtx) {
+    if (!soundEnabled || !audioReady || !audioCtx) {
         return;
     }
 
@@ -603,11 +640,13 @@ function triggerRaceFinish(time) {
 }
 
 function create() {
-    // Try to unlock sound as early as the browser allows.
-    // Mobile browsers usually require one tap before audio can play.
-    window.addEventListener('pointerdown', unlockAudio);
-    window.addEventListener('touchstart', unlockAudio, { passive: true });
-    window.addEventListener('keydown', unlockAudio);
+    const audioBtn = document.getElementById('btn-audio');
+
+    if (audioBtn) {
+        audioBtn.textContent = "Audio: OFF";
+        audioBtn.classList.remove('on');
+        audioBtn.addEventListener('click', toggleAudio);
+    }
 
     bestLapTime = parseFloat(localStorage.getItem('f1_bestLap')) || Infinity;
     bestRaceTime = parseFloat(localStorage.getItem('f1_bestRace')) || Infinity;
@@ -707,7 +746,6 @@ function create() {
 
         const press = (e) => {
             e.preventDefault();
-            unlockAudio();
 
             if (e.pointerId !== undefined && btn.setPointerCapture) {
                 try {
