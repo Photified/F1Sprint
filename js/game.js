@@ -57,7 +57,6 @@ let playerTrackProgress = 0;
 const CPU_WAYPOINT_REACH_RADIUS = 48;
 
 // Slower, more human AI cornering.
-// Previous values were 0.68 and 0.82.
 const CPU_SHARP_TURN_SLOWDOWN = 0.58;
 const CPU_MEDIUM_TURN_SLOWDOWN = 0.74;
 
@@ -320,18 +319,18 @@ function create() {
         cpu.body.setDrag(20);
     };
 
-    // Slower AI version.
-    // Player max speed is 450, so AI base speeds now sit under that.
-    // Their cleaner racing line still keeps them competitive.
+    // Slightly slower AI version.
+    // Reduced about 5% from the previous version.
+    // Player max speed is still 450.
     // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid the starting swirl.
-    spawnCPU(870, 767, 'car-blue', 420, -18, 0, 3);
-    spawnCPU(970, 767, 'car-green', 412, 18, 250, 3);
-    spawnCPU(1070, 767, 'car-orange', 405, -10, 500, 2);
-    spawnCPU(1170, 767, 'car-pink', 398, 10, 750, 2);
+    spawnCPU(870, 767, 'car-blue', 400, -18, 0, 3);
+    spawnCPU(970, 767, 'car-green', 392, 18, 250, 3);
+    spawnCPU(1070, 767, 'car-orange', 385, -10, 500, 2);
+    spawnCPU(1170, 767, 'car-pink', 378, 10, 750, 2);
 
-    spawnCPU(900, 813, 'car-yellow', 416, 22, 150, 3);
-    spawnCPU(1000, 813, 'car-purple', 408, -22, 400, 3);
-    spawnCPU(1100, 813, 'car-cyan', 400, 0, 650, 2);
+    spawnCPU(900, 813, 'car-yellow', 396, 22, 150, 3);
+    spawnCPU(1000, 813, 'car-purple', 388, -22, 400, 3);
+    spawnCPU(1100, 813, 'car-cyan', 380, 0, 650, 2);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
