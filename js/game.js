@@ -320,7 +320,7 @@ function create() {
     };
 
     // Slower AI version.
-    // All start delays are now 0 so the player does not plow into parked cars.
+    // All start delays are 0 so the player does not plow into parked cars.
     // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid the starting swirl.
     spawnCPU(870, 767, 'car-blue', 400, -18, 0, 3);
     spawnCPU(970, 767, 'car-green', 392, 18, 0, 3);
@@ -435,6 +435,12 @@ function create() {
 }
 
 function calculatePlayerPosition() {
+    // Make sure the player's progress is fresh before calculating rank.
+    // This fixes false results like showing 8th when the player is visually 4th.
+    if (playerCar) {
+        updatePlayerTrackProgress();
+    }
+
     let playerScore = playerTrackProgress;
     let rank = 1;
 
@@ -458,6 +464,11 @@ function calculatePlayerPosition() {
 }
 
 function triggerAIRaceWin(time) {
+    // Update player progress one final time before freezing the race.
+    updatePlayerTrackProgress();
+
+    let finalRank = calculatePlayerPosition();
+
     raceFinished = true;
 
     document.getElementById('lap-counter').innerText = "FINISH";
@@ -472,7 +483,6 @@ function triggerAIRaceWin(time) {
     });
 
     let totalRaceTime = time - startTime;
-    let finalRank = calculatePlayerPosition();
 
     let suffix = "th";
 
@@ -493,6 +503,9 @@ function triggerAIRaceWin(time) {
 }
 
 function triggerRaceFinish(time) {
+    // Update player progress one final time before result calculation.
+    updatePlayerTrackProgress();
+
     raceFinished = true;
 
     document.getElementById('lap-counter').innerText = "FINISH";
@@ -675,7 +688,7 @@ function update(time) {
                 cpu.body.setVelocity(0);
 
                 // End the race immediately when the first AI car finishes.
-                // This restores the old "first across the line freezes the race" behavior.
+                // This restores the "first across the line freezes the race" behavior.
                 if (!raceFinished) {
                     triggerAIRaceWin(time);
                 }
@@ -688,6 +701,9 @@ function update(time) {
     if (raceFinished) {
         return;
     }
+
+    // Update player progress before final rank checks.
+    updatePlayerTrackProgress();
 
     // --- PLAYER MASK LOGIC ---
     let x = Math.floor(playerCar.x);
