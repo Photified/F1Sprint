@@ -677,7 +677,7 @@ function update(time) {
             playerCar.y = prevY;
             currentSpeed = -currentSpeed * 0.5;
         } else if (r > 100 && g < 100 && b < 100) {
-            maxSpeed = 100;
+            maxSpeed = 275;
         } else {
             maxSpeed = 450;
         }
