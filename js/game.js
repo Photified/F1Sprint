@@ -317,17 +317,17 @@ function create() {
         cpu.body.setDrag(20);
     };
 
-    // Slowed down 5–7% from the previous version.
-    // Also each car now gets a better starting target waypoint.
-    // This fixes the first two cars swirling at launch.
-    spawnCPU(870, 767, 'car-blue', 525, -18, 0, 3);
-    spawnCPU(970, 767, 'car-green', 512, 18, 250, 3);
-    spawnCPU(1070, 767, 'car-orange', 502, -10, 500, 2);
-    spawnCPU(1170, 767, 'car-pink', 490, 10, 750, 2);
+    // Slower AI version.
+    // These are reduced again from the last version to make the pack more beatable.
+    // Cars 1, 2, 5, and 6 still start toward waypoint 3 to avoid the starting swirl.
+    spawnCPU(870, 767, 'car-blue', 480, -18, 0, 3);
+    spawnCPU(970, 767, 'car-green', 470, 18, 250, 3);
+    spawnCPU(1070, 767, 'car-orange', 460, -10, 500, 2);
+    spawnCPU(1170, 767, 'car-pink', 450, 10, 750, 2);
 
-    spawnCPU(900, 813, 'car-yellow', 520, 22, 150, 3);
-    spawnCPU(1000, 813, 'car-purple', 508, -22, 400, 3);
-    spawnCPU(1100, 813, 'car-cyan', 498, 0, 650, 2);
+    spawnCPU(900, 813, 'car-yellow', 475, 22, 150, 3);
+    spawnCPU(1000, 813, 'car-purple', 465, -22, 400, 3);
+    spawnCPU(1100, 813, 'car-cyan', 455, 0, 650, 2);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
@@ -342,6 +342,9 @@ function create() {
     prevY = playerCar.y;
 
     this.physics.add.collider(playerCar, cpuGroup);
+
+    // CPU cars should not hard-collide with each other.
+    // This prevents start-line pileups.
     this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
@@ -593,7 +596,8 @@ function update(time) {
             targetSpeed = 0;
         }
 
-        // Faster, less punishing corner behavior.
+        // Less punishing corner behavior than the original AI,
+        // but still enough slowdown to stop them from flying through turns.
         if (Math.abs(angleDiff) > 0.9) {
             targetSpeed *= CPU_SHARP_TURN_SLOWDOWN;
         } else if (Math.abs(angleDiff) > 0.45) {
