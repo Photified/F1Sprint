@@ -53,6 +53,11 @@ let mobileBrake = false;
 let playerTargetWP = 2;
 let playerTrackProgress = 0;
 
+// AI tuning
+const CPU_WAYPOINT_REACH_RADIUS = 48;
+const CPU_SHARP_TURN_SLOWDOWN = 0.68;
+const CPU_MEDIUM_TURN_SLOWDOWN = 0.82;
+
 // --- RACING LINE ---
 const waypoints = [
     // Bottom straight
@@ -72,7 +77,7 @@ const waypoints = [
     {x: 340, y: 558},
     {x: 475, y: 550},
 
-    // Left-middle inner turn: tighter line
+    // Left-middle inner turn
     {x: 555, y: 535},
     {x: 610, y: 505},
     {x: 625, y: 465},
@@ -104,26 +109,23 @@ const waypoints = [
     {x: 1310, y: 370},
     {x: 1190, y: 370},
 
-    // Right inner loop: high/left entry, sharp right-side turn
+    // Right inner loop
     {x: 1120, y: 350},
     {x: 1000, y: 350},
     {x: 900, y: 375},
 
-    // Mid-corner moved right so the car turns sharper
     {x: 860, y: 430},
     {x: 875, y: 500},
     {x: 930, y: 560},
 
-    // Exit moved higher and farther right
     {x: 1035, y: 585},
     {x: 1165, y: 585},
     {x: 1265, y: 575},
 
-    // Stay high before final corner
     {x: 1325, y: 565},
     {x: 1405, y: 555},
 
-    // Final corner: tighter, entry and exit pulled left
+    // Final corner
     {x: 1465, y: 585},
     {x: 1500, y: 645},
     {x: 1495, y: 710},
@@ -181,7 +183,6 @@ function generateCarSprite(scene, keyName, mainColor) {
 
 function getProgressScore(lapNumber, targetWP, x, y) {
     let target = waypoints[targetWP];
-
     let previousWP = targetWP - 1;
 
     if (previousWP < 0) {
@@ -227,7 +228,6 @@ function updatePlayerTrackProgress() {
         target.y
     );
 
-    // Larger than CPU radius because the player may not follow the exact AI line
     if (dist < 120) {
         playerTargetWP++;
 
@@ -317,18 +317,16 @@ function create() {
         cpu.body.setDrag(20);
     };
 
-    // --- ALIGNED & STAGGERED 8-CAR GRID ---
+    // Faster AI target: roughly 12–14 seconds per lap.
+    // Tune these by +/- 20 if they are too fast or too slow.
+    spawnCPU(870, 767, 'car-blue', 560, -18, 0);
+    spawnCPU(970, 767, 'car-green', 545, 18, 250);
+    spawnCPU(1070, 767, 'car-orange', 535, -10, 500);
+    spawnCPU(1170, 767, 'car-pink', 520, 10, 750);
 
-    // Top Row
-    spawnCPU(870, 767, 'car-blue', 370, -18, 0);
-    spawnCPU(970, 767, 'car-green', 360, 18, 250);
-    spawnCPU(1070, 767, 'car-orange', 350, -10, 500);
-    spawnCPU(1170, 767, 'car-pink', 340, 10, 750);
-
-    // Bottom Row
-    spawnCPU(900, 813, 'car-yellow', 365, 22, 150);
-    spawnCPU(1000, 813, 'car-purple', 355, -22, 400);
-    spawnCPU(1100, 813, 'car-cyan', 345, 0, 650);
+    spawnCPU(900, 813, 'car-yellow', 555, 22, 150);
+    spawnCPU(1000, 813, 'car-purple', 540, -22, 400);
+    spawnCPU(1100, 813, 'car-cyan', 530, 0, 650);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
@@ -343,9 +341,6 @@ function create() {
     prevY = playerCar.y;
 
     this.physics.add.collider(playerCar, cpuGroup);
-
-    // CPU cars should not hard-collide with each other.
-    // This prevents start-line pileups.
     this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
@@ -357,59 +352,37 @@ function create() {
             return;
         }
 
-        let isHeld = false;
-
         const press = (e) => {
-            if (e) {
-                e.preventDefault();
-            }
+            e.preventDefault();
 
-            isHeld = true;
-            keydown();
-
-            if (e && e.pointerId !== undefined && btn.setPointerCapture) {
+            if (e.pointerId !== undefined && btn.setPointerCapture) {
                 try {
                     btn.setPointerCapture(e.pointerId);
                 } catch (err) {
-                    // Some mobile browsers may not allow capture in every case.
+                    // Some mobile browsers may not allow pointer capture here.
                 }
             }
+
+            keydown();
         };
 
         const release = (e) => {
-            if (e) {
-                e.preventDefault();
-            }
-
-            if (!isHeld) {
-                return;
-            }
-
-            isHeld = false;
+            e.preventDefault();
             keyup();
-
-            if (e && e.pointerId !== undefined && btn.releasePointerCapture) {
-                try {
-                    btn.releasePointerCapture(e.pointerId);
-                } catch (err) {
-                    // Ignore if the pointer was already released.
-                }
-            }
         };
 
-        // Pointer events give better mobile behavior than separate touch/mouse
-        // events because the button remains held even if your thumb drifts a bit.
         btn.addEventListener('pointerdown', press);
         btn.addEventListener('pointerup', release);
         btn.addEventListener('pointercancel', release);
-        btn.addEventListener('lostpointercapture', release);
+        btn.addEventListener('pointerleave', release);
 
-        // Desktop fallback.
-        btn.addEventListener('mouseleave', (e) => {
-            if (e.pointerType === 'mouse') {
-                release(e);
-            }
-        });
+        btn.addEventListener('touchstart', press, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
     };
 
     bindBtn('btn-left', () => mobileLeft = true, () => mobileLeft = false);
@@ -492,7 +465,6 @@ function triggerRaceFinish(time) {
 
     let totalRaceTime = time - startTime;
 
-    // Force player score to completed race before calculating result
     playerTrackProgress = maxLaps * waypoints.length;
 
     let finalRank = calculatePlayerPosition();
@@ -558,7 +530,8 @@ function update(time) {
             target.y
         );
 
-        if (dist < 28) {
+        // Bigger reach radius makes the AI smoother and less twitchy.
+        if (dist < CPU_WAYPOINT_REACH_RADIUS) {
             cpu.targetWP++;
 
             if (cpu.targetWP >= waypoints.length) {
@@ -568,7 +541,6 @@ function update(time) {
             target = waypoints[cpu.targetWP];
         }
 
-        // Update CPU progress for position calculation
         cpu.trackProgress = getProgressScore(
             cpu.laps,
             cpu.targetWP,
@@ -576,7 +548,6 @@ function update(time) {
             cpu.y
         );
 
-        // Offset target sideways so cars do not all aim at the exact same pixel
         let nextWP = waypoints[(cpu.targetWP + 1) % waypoints.length];
 
         let pathAngle = Phaser.Math.Angle.Between(
@@ -621,10 +592,11 @@ function update(time) {
             targetSpeed = 0;
         }
 
-        if (Math.abs(angleDiff) > 0.8) {
-            targetSpeed *= 0.48;
-        } else if (Math.abs(angleDiff) > 0.4) {
-            targetSpeed *= 0.68;
+        // Faster, less punishing corner behavior.
+        if (Math.abs(angleDiff) > 0.9) {
+            targetSpeed *= CPU_SHARP_TURN_SLOWDOWN;
+        } else if (Math.abs(angleDiff) > 0.45) {
+            targetSpeed *= CPU_MEDIUM_TURN_SLOWDOWN;
         }
 
         this.physics.velocityFromRotation(
@@ -677,6 +649,8 @@ function update(time) {
             playerCar.y = prevY;
             currentSpeed = -currentSpeed * 0.5;
         } else if (r > 100 && g < 100 && b < 100) {
+            // Softer grass/sand penalty.
+            // Old value was 100, which was very punishing.
             maxSpeed = 275;
         } else {
             maxSpeed = 450;
@@ -714,7 +688,6 @@ function update(time) {
         playerCar.body.velocity
     );
 
-    // Update player progress every frame for accurate rank
     updatePlayerTrackProgress();
 
     // --- PLAYER LAP LOGIC ---
