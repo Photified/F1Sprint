@@ -1,5 +1,5 @@
 // BUMPED TO V2 TO FORCE UPDATE ON PHONES
-const CACHE_NAME = 'f1-sprint-v19';
+const CACHE_NAME = 'f1-sprint-v20';
 
 const ASSETS_TO_CACHE = [
     './',
