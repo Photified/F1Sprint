@@ -319,18 +319,17 @@ function create() {
         cpu.body.setDrag(20);
     };
 
-    // Slightly slower AI version.
-    // Reduced about 5% from the previous version.
-    // Player max speed is still 450.
+    // Slower AI version.
+    // All start delays are now 0 so the player does not plow into parked cars.
     // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid the starting swirl.
     spawnCPU(870, 767, 'car-blue', 400, -18, 0, 3);
-    spawnCPU(970, 767, 'car-green', 392, 18, 250, 3);
-    spawnCPU(1070, 767, 'car-orange', 385, -10, 500, 2);
-    spawnCPU(1170, 767, 'car-pink', 378, 10, 750, 2);
+    spawnCPU(970, 767, 'car-green', 392, 18, 0, 3);
+    spawnCPU(1070, 767, 'car-orange', 385, -10, 0, 2);
+    spawnCPU(1170, 767, 'car-pink', 378, 10, 0, 2);
 
-    spawnCPU(900, 813, 'car-yellow', 396, 22, 150, 3);
-    spawnCPU(1000, 813, 'car-purple', 388, -22, 400, 3);
-    spawnCPU(1100, 813, 'car-cyan', 380, 0, 650, 2);
+    spawnCPU(900, 813, 'car-yellow', 396, 22, 0, 3);
+    spawnCPU(1000, 813, 'car-purple', 388, -22, 0, 3);
+    spawnCPU(1100, 813, 'car-cyan', 380, 0, 0, 2);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
@@ -458,6 +457,41 @@ function calculatePlayerPosition() {
     return rank;
 }
 
+function triggerAIRaceWin(time) {
+    raceFinished = true;
+
+    document.getElementById('lap-counter').innerText = "FINISH";
+
+    currentSpeed = 0;
+    playerCar.body.setVelocity(0);
+
+    cpuGroup.children.iterate(cpu => {
+        if (cpu && cpu.body) {
+            cpu.body.setVelocity(0);
+        }
+    });
+
+    let totalRaceTime = time - startTime;
+    let finalRank = calculatePlayerPosition();
+
+    let suffix = "th";
+
+    if (finalRank === 1) {
+        suffix = "st";
+    } else if (finalRank === 2) {
+        suffix = "nd";
+    } else if (finalRank === 3) {
+        suffix = "rd";
+    }
+
+    document.getElementById('res-position').style.color = '#e10600';
+    document.getElementById('res-position').innerText = `POSITION: ${finalRank}${suffix}`;
+
+    document.getElementById('res-final').innerText = formatTime(totalRaceTime);
+    document.getElementById('res-best').innerText = formatTime(bestLapTime);
+    document.getElementById('results-modal').classList.add('show');
+}
+
 function triggerRaceFinish(time) {
     raceFinished = true;
 
@@ -467,7 +501,9 @@ function triggerRaceFinish(time) {
     playerCar.body.setVelocity(0);
 
     cpuGroup.children.iterate(cpu => {
-        cpu.body.setVelocity(0);
+        if (cpu && cpu.body) {
+            cpu.body.setVelocity(0);
+        }
     });
 
     let totalRaceTime = time - startTime;
@@ -480,13 +516,9 @@ function triggerRaceFinish(time) {
 
     if (finalRank === 1) {
         suffix = "st";
-    }
-
-    if (finalRank === 2) {
+    } else if (finalRank === 2) {
         suffix = "nd";
-    }
-
-    if (finalRank === 3) {
+    } else if (finalRank === 3) {
         suffix = "rd";
     }
 
@@ -512,17 +544,27 @@ function triggerRaceFinish(time) {
 
 function update(time) {
     if (!raceStarted || raceFinished) {
-        playerCar.body.setVelocity(0);
+        if (playerCar && playerCar.body) {
+            playerCar.body.setVelocity(0);
+        }
 
-        cpuGroup.children.iterate(cpu => {
-            cpu.body.setVelocity(0);
-        });
+        if (cpuGroup) {
+            cpuGroup.children.iterate(cpu => {
+                if (cpu && cpu.body) {
+                    cpu.body.setVelocity(0);
+                }
+            });
+        }
 
         return;
     }
 
     // --- CPU AI LOGIC ---
     cpuGroup.children.iterate((cpu) => {
+        if (!cpu) {
+            return;
+        }
+
         if (cpu.finished) {
             cpu.body.setVelocity(0);
             return;
@@ -631,11 +673,21 @@ function update(time) {
                 cpu.finishTime = time;
                 cpu.trackProgress = maxLaps * waypoints.length;
                 cpu.body.setVelocity(0);
+
+                // End the race immediately when the first AI car finishes.
+                // This restores the old "first across the line freezes the race" behavior.
+                if (!raceFinished) {
+                    triggerAIRaceWin(time);
+                }
             }
         }
 
         cpu.prevX = cpu.x;
     });
+
+    if (raceFinished) {
+        return;
+    }
 
     // --- PLAYER MASK LOGIC ---
     let x = Math.floor(playerCar.x);
