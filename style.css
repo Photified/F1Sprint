@@ -146,6 +146,84 @@ select {
     font-size: 16px !important;
 }
 
+/* 
+   Big invisible steering hit areas.
+   The left control column is split into two large press zones:
+   left half = left steer, right half = right steer.
+   The boxes are intentionally invisible.
+*/
+.left-controls {
+    position: relative;
+    gap: 0;
+}
+
+.left-controls #btn-left,
+.left-controls #btn-right {
+    position: relative;
+    flex: 1;
+    width: 50%;
+    height: 100%;
+    min-width: 0;
+    min-height: 100%;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    color: transparent;
+    overflow: visible;
+}
+
+/* visible round button drawn inside the large invisible hit area */
+.left-controls #btn-left::after,
+.left-controls #btn-right::after {
+    content: "";
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: rgba(50, 50, 50, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+
+.left-controls #btn-left::after {
+    right: 5px;
+}
+
+.left-controls #btn-right::after {
+    left: 5px;
+}
+
+.left-controls #btn-left::before,
+.left-controls #btn-right::before {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+    font-size: 24px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.left-controls #btn-left::before {
+    content: "◀";
+    right: 29px;
+}
+
+.left-controls #btn-right::before {
+    content: "▶";
+    left: 29px;
+}
+
+.left-controls #btn-left:active::after,
+.left-controls #btn-right:active::after {
+    background: rgba(255, 255, 255, 0.6);
+    transform: translateY(-50%) scale(0.95);
+}
+
 /* --- RACE PROMPT --- */
 #race-prompt {
     position: fixed;
@@ -204,7 +282,8 @@ select {
 }
 
 #btn-close,
-#btn-install {
+#btn-install,
+#btn-audio {
     padding: 10px 20px;
     font-size: 18px;
     font-weight: 400;
@@ -224,6 +303,19 @@ select {
     color: white;
     margin-left: 10px;
     display: none;
+}
+
+#btn-audio {
+    background: #222;
+    color: white;
+    margin-left: 10px;
+    border: 2px solid #666;
+}
+
+#btn-audio.on {
+    background: #e10600;
+    border-color: #e10600;
+    color: white;
 }
 
 /* Orientation Lock */
@@ -442,6 +534,10 @@ select {
         background: #111;
     }
 
+    .left-controls {
+        gap: 0 !important;
+    }
+
     .left-controls,
     .right-controls {
         left: auto !important;
@@ -459,6 +555,25 @@ select {
         border-radius: 50% !important;
         font-size: 24px !important;
         padding: 0 !important;
+    }
+
+    .left-controls #btn-left,
+    .left-controls #btn-right {
+        width: 50% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 100% !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: transparent !important;
+    }
+
+    .left-controls #btn-left::after,
+    .left-controls #btn-right::after {
+        width: 70px;
+        height: 70px;
     }
 
     #btn-gas {
@@ -551,12 +666,43 @@ select {
         gap: 8px;
     }
 
+    .left-controls {
+        gap: 0 !important;
+    }
+
     .side-controls button {
         width: 62px !important;
         height: 62px !important;
         min-width: 62px !important;
         min-height: 62px !important;
         font-size: 21px !important;
+    }
+
+    .left-controls #btn-left,
+    .left-controls #btn-right {
+        width: 50% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 100% !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: transparent !important;
+    }
+
+    .left-controls #btn-left::after,
+    .left-controls #btn-right::after {
+        width: 62px;
+        height: 62px;
+    }
+
+    .left-controls #btn-left::before {
+        right: 25px;
+    }
+
+    .left-controls #btn-right::before {
+        left: 25px;
     }
 
     #btn-gas {
@@ -582,94 +728,5 @@ select {
 
     #race-prompt.go {
         font-size: 50px !important;
-    }
-}
-
-/* --- EXTRA-LARGE MOBILE TOUCH TARGETS ---
-   The visible buttons still look like controls, but their clickable areas fill
-   almost the entire side columns in mobile landscape. */
-@media screen and (orientation: landscape) and (pointer: coarse) {
-    .left-controls {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 4px !important;
-        padding: 6px 4px !important;
-        align-items: stretch !important;
-        justify-items: stretch !important;
-    }
-
-    .left-controls button {
-        width: 100% !important;
-        height: 100% !important;
-        min-width: 0 !important;
-        min-height: 0 !important;
-        border-radius: 0 !important;
-        font-size: 34px !important;
-        background: transparent !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        overflow: visible !important;
-    }
-
-    .left-controls button::before {
-        content: "";
-        position: absolute;
-        width: 68px;
-        height: 68px;
-        border-radius: 50%;
-        background: rgba(50, 50, 50, 0.72);
-        border: 2px solid rgba(255, 255, 255, 0.35);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        z-index: 0;
-    }
-
-    .side-controls button {
-        position: relative;
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    .left-controls button:active {
-        background: transparent !important;
-        transform: none !important;
-    }
-
-    .left-controls button:active::before {
-        background: rgba(255, 255, 255, 0.6);
-        transform: scale(0.95);
-    }
-
-    .right-controls {
-        padding: 6px 4px !important;
-    }
-}
-
-/* Make the giant steering zones work even on short mobile browser viewports. */
-@media screen and (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
-    .left-controls {
-        width: 150px !important;
-        height: 100% !important;
-    }
-
-    .left-controls button {
-        height: calc(100dvh - 70px) !important;
-        max-height: 100% !important;
-    }
-}
-
-@media screen and (max-height: 430px) and (orientation: landscape) and (pointer: coarse) {
-    .left-controls {
-        width: 130px !important;
-    }
-
-    .left-controls button {
-        height: calc(100dvh - 58px) !important;
-        max-height: 100% !important;
-        font-size: 30px !important;
-        border-radius: 16px !important;
-    }
-
-    .left-controls button::before {
-        width: 58px;
-        height: 58px;
     }
 }

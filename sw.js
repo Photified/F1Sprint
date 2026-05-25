@@ -1,5 +1,5 @@
-// BUMPED TO V2 TO FORCE UPDATE ON PHONES
-const CACHE_NAME = 'f1-sprint-v27';
+// BUMPED TO FORCE UPDATE ON PHONES
+const CACHE_NAME = 'f1-sprint-v28';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -29,12 +29,13 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
+
     event.respondWith(
         caches.match(event.request).then(response => {
             return response || fetch(event.request);
