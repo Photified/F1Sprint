@@ -55,8 +55,11 @@ let playerTrackProgress = 0;
 
 // AI tuning
 const CPU_WAYPOINT_REACH_RADIUS = 48;
-const CPU_SHARP_TURN_SLOWDOWN = 0.68;
-const CPU_MEDIUM_TURN_SLOWDOWN = 0.82;
+
+// Slower, more human AI cornering.
+// Previous values were 0.68 and 0.82.
+const CPU_SHARP_TURN_SLOWDOWN = 0.58;
+const CPU_MEDIUM_TURN_SLOWDOWN = 0.74;
 
 // --- RACING LINE ---
 const waypoints = [
@@ -318,16 +321,17 @@ function create() {
     };
 
     // Slower AI version.
-    // These are reduced again from the last version to make the pack more beatable.
-    // Cars 1, 2, 5, and 6 still start toward waypoint 3 to avoid the starting swirl.
-    spawnCPU(870, 767, 'car-blue', 480, -18, 0, 3);
-    spawnCPU(970, 767, 'car-green', 470, 18, 250, 3);
-    spawnCPU(1070, 767, 'car-orange', 460, -10, 500, 2);
-    spawnCPU(1170, 767, 'car-pink', 450, 10, 750, 2);
+    // Player max speed is 450, so AI base speeds now sit under that.
+    // Their cleaner racing line still keeps them competitive.
+    // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid the starting swirl.
+    spawnCPU(870, 767, 'car-blue', 420, -18, 0, 3);
+    spawnCPU(970, 767, 'car-green', 412, 18, 250, 3);
+    spawnCPU(1070, 767, 'car-orange', 405, -10, 500, 2);
+    spawnCPU(1170, 767, 'car-pink', 398, 10, 750, 2);
 
-    spawnCPU(900, 813, 'car-yellow', 475, 22, 150, 3);
-    spawnCPU(1000, 813, 'car-purple', 465, -22, 400, 3);
-    spawnCPU(1100, 813, 'car-cyan', 455, 0, 650, 2);
+    spawnCPU(900, 813, 'car-yellow', 416, 22, 150, 3);
+    spawnCPU(1000, 813, 'car-purple', 408, -22, 400, 3);
+    spawnCPU(1100, 813, 'car-cyan', 400, 0, 650, 2);
 
     // PLAYER - Grid 8
     playerCar = this.physics.add.sprite(1200, 813, 'car-red');
@@ -596,8 +600,7 @@ function update(time) {
             targetSpeed = 0;
         }
 
-        // Less punishing corner behavior than the original AI,
-        // but still enough slowdown to stop them from flying through turns.
+        // Slower corner behavior so AI does not feel faster than the player.
         if (Math.abs(angleDiff) > 0.9) {
             targetSpeed *= CPU_SHARP_TURN_SLOWDOWN;
         } else if (Math.abs(angleDiff) > 0.45) {
