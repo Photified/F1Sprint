@@ -54,9 +54,9 @@ let playerTargetWP = 2;
 let playerTrackProgress = 0;
 
 // AI tuning
-const CPU_WAYPOINT_REACH_RADIUS = 48;
-const CPU_SHARP_TURN_SLOWDOWN = 0.58;
-const CPU_MEDIUM_TURN_SLOWDOWN = 0.74;
+const CPU_WAYPOINT_REACH_RADIUS = 40;
+const CPU_SHARP_TURN_SLOWDOWN = 0.52;
+const CPU_MEDIUM_TURN_SLOWDOWN = 0.70;
 
 // --- AUDIO STATE ---
 let audioCtx = null;
@@ -154,59 +154,75 @@ const dayWaypoints = [
 ];
 
 const nightWaypoints = [
-    // Bottom straight, travelling left from the grid
-    {x: 1375, y: 792},
-    {x: 1180, y: 792},
-    {x: 980, y: 795},
-    {x: 815, y: 802},
-    {x: 620, y: 805},
-    {x: 390, y: 805},
-    {x: 210, y: 775},
+    // Bottom straight, moving left from the grid / finish line
+    {x: 1375, y: 812},
+    {x: 1235, y: 812},
+    {x: 1090, y: 812},
+    {x: 950, y: 812},
+    {x: 805, y: 812},
+    {x: 650, y: 812},
+    {x: 500, y: 812},
+    {x: 350, y: 805},
+    {x: 230, y: 785},
 
-    // Bottom-left sweeper into the lower left section
-    {x: 105, y: 700},
-    {x: 95, y: 600},
-    {x: 145, y: 520},
-    {x: 265, y: 485},
-    {x: 430, y: 482},
-    {x: 560, y: 462},
+    // Big bottom-left sweeper
+    {x: 165, y: 750},
+    {x: 140, y: 685},
+    {x: 160, y: 625},
+    {x: 235, y: 590},
+    {x: 355, y: 590},
+    {x: 500, y: 590},
+    {x: 610, y: 560},
 
-    // Pulled-down second corner / wide left infield turn
-    {x: 610, y: 405},
-    {x: 570, y: 340},
-    {x: 455, y: 315},
-    {x: 325, y: 315},
-    {x: 230, y: 285},
-    {x: 225, y: 235},
-    {x: 320, y: 210},
+    // First set of corners, pulled lower from the mask before the back straight
+    {x: 665, y: 505},
+    {x: 660, y: 440},
+    {x: 610, y: 385},
+    {x: 520, y: 360},
+    {x: 405, y: 362},
+    {x: 295, y: 365},
+    {x: 215, y: 330},
+    {x: 205, y: 285},
+    {x: 270, y: 252},
 
-    // Top straight and forced turn area
-    {x: 545, y: 210},
-    {x: 780, y: 212},
-    {x: 1000, y: 212},
-    {x: 1115, y: 235},
-    {x: 1120, y: 305},
-    {x: 1025, y: 355},
+    // Back straight, left to right
+    {x: 420, y: 245},
+    {x: 600, y: 245},
+    {x: 780, y: 245},
+    {x: 950, y: 245},
+    {x: 1070, y: 250},
 
-    // Center-right carousel
-    {x: 900, y: 390},
-    {x: 850, y: 475},
-    {x: 910, y: 560},
-    {x: 1045, y: 610},
-    {x: 1220, y: 600},
+    // Wall-forced turn after the back straight
+    {x: 1125, y: 278},
+    {x: 1120, y: 322},
+    {x: 1065, y: 350},
+    {x: 980, y: 365},
+    {x: 905, y: 405},
 
-    // Right-side loop
-    {x: 1325, y: 560},
-    {x: 1395, y: 480},
-    {x: 1350, y: 390},
-    {x: 1325, y: 300},
-    {x: 1375, y: 245},
-    {x: 1480, y: 285},
-    {x: 1500, y: 410},
-    {x: 1450, y: 530},
-    {x: 1435, y: 665},
-    {x: 1365, y: 755},
-    {x: 1345, y: 792}
+    // Center carousel, clockwise around the island
+    {x: 875, y: 465},
+    {x: 910, y: 525},
+    {x: 995, y: 560},
+    {x: 1100, y: 560},
+    {x: 1210, y: 535},
+    {x: 1280, y: 480},
+    {x: 1265, y: 415},
+    {x: 1200, y: 385},
+
+    // Right-side snake section
+    {x: 1225, y: 325},
+    {x: 1275, y: 270},
+    {x: 1370, y: 245},
+    {x: 1460, y: 285},
+    {x: 1490, y: 370},
+    {x: 1465, y: 470},
+    {x: 1415, y: 555},
+    {x: 1410, y: 640},
+
+    // Bottom-right bend back to start/finish
+    {x: 1470, y: 705},
+    {x: 1440, y: 770},
+    {x: 1350, y: 812}
 ];
 
 let waypoints = dayWaypoints;
@@ -241,16 +257,16 @@ const TRACKS = {
         trackKey: 'trackNight',
         maskKey: 'maskNight',
         waypoints: nightWaypoints,
-        finishX: 815,
-        playerStart: {x: 1230, y: 805, angle: 180, targetWP: 2},
+        finishX: 805,
+        playerStart: {x: 1265, y: 835, angle: 180, targetWP: 2},
         cpuStarts: [
-            {x: 900, y: 770, color: 'car-blue', speed: 390, laneOffset: -18, startDelay: 0, startingTargetWP: 3},
-            {x: 1000, y: 770, color: 'car-green', speed: 382, laneOffset: 18, startDelay: 0, startingTargetWP: 3},
-            {x: 1100, y: 770, color: 'car-orange', speed: 376, laneOffset: -10, startDelay: 0, startingTargetWP: 2},
-            {x: 1200, y: 770, color: 'car-pink', speed: 370, laneOffset: 10, startDelay: 0, startingTargetWP: 2},
-            {x: 930, y: 815, color: 'car-yellow', speed: 386, laneOffset: 22, startDelay: 0, startingTargetWP: 3},
-            {x: 1030, y: 815, color: 'car-purple', speed: 378, laneOffset: -22, startDelay: 0, startingTargetWP: 3},
-            {x: 1130, y: 815, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+            {x: 920, y: 785, color: 'car-blue', speed: 390, laneOffset: -14, startDelay: 0, startingTargetWP: 2},
+            {x: 1025, y: 785, color: 'car-green', speed: 382, laneOffset: 14, startDelay: 0, startingTargetWP: 2},
+            {x: 1130, y: 785, color: 'car-orange', speed: 376, laneOffset: -8, startDelay: 0, startingTargetWP: 2},
+            {x: 1235, y: 785, color: 'car-pink', speed: 370, laneOffset: 8, startDelay: 0, startingTargetWP: 2},
+            {x: 970, y: 835, color: 'car-yellow', speed: 386, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
+            {x: 1075, y: 835, color: 'car-purple', speed: 378, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
+            {x: 1185, y: 835, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
         ]
     }
 };
