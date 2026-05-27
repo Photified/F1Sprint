@@ -79,7 +79,7 @@ let soundUnlocked = false;
 let soundEnabled = false;
 
 // --- RACING LINE ---
-const waypoints = [
+const dayWaypoints = [
     // Bottom straight
     {x: 1375, y: 792},
     {x: 1180, y: 792},
@@ -153,6 +153,112 @@ const waypoints = [
     {x: 1345, y: 792}
 ];
 
+const nightWaypoints = [
+    // Bottom straight, travelling left from the grid
+    {x: 1375, y: 792},
+    {x: 1180, y: 792},
+    {x: 980, y: 795},
+    {x: 815, y: 802},
+    {x: 620, y: 805},
+    {x: 390, y: 805},
+    {x: 210, y: 775},
+
+    // Bottom-left sweeper into the lower left section
+    {x: 105, y: 700},
+    {x: 95, y: 600},
+    {x: 145, y: 520},
+    {x: 265, y: 485},
+    {x: 430, y: 482},
+    {x: 560, y: 462},
+
+    // Pulled-down second corner / wide left infield turn
+    {x: 610, y: 405},
+    {x: 570, y: 340},
+    {x: 455, y: 315},
+    {x: 325, y: 315},
+    {x: 230, y: 285},
+    {x: 225, y: 235},
+    {x: 320, y: 210},
+
+    // Top straight and forced turn area
+    {x: 545, y: 210},
+    {x: 780, y: 212},
+    {x: 1000, y: 212},
+    {x: 1115, y: 235},
+    {x: 1120, y: 305},
+    {x: 1025, y: 355},
+
+    // Center-right carousel
+    {x: 900, y: 390},
+    {x: 850, y: 475},
+    {x: 910, y: 560},
+    {x: 1045, y: 610},
+    {x: 1220, y: 600},
+
+    // Right-side loop
+    {x: 1325, y: 560},
+    {x: 1395, y: 480},
+    {x: 1350, y: 390},
+    {x: 1325, y: 300},
+    {x: 1375, y: 245},
+    {x: 1480, y: 285},
+    {x: 1500, y: 410},
+    {x: 1450, y: 530},
+    {x: 1435, y: 665},
+    {x: 1365, y: 755},
+    {x: 1345, y: 792}
+];
+
+let waypoints = dayWaypoints;
+let currentTrackId = 'day';
+let currentTrackName = 'Classic Sprint';
+let currentFinishX = 730;
+let selectedTrackConfig = null;
+let trackBackground = null;
+
+const TRACKS = {
+    day: {
+        id: 'day',
+        name: 'Classic Sprint',
+        trackKey: 'trackDay',
+        maskKey: 'maskDay',
+        waypoints: dayWaypoints,
+        finishX: 730,
+        playerStart: {x: 1200, y: 813, angle: 180, targetWP: 2},
+        cpuStarts: [
+            {x: 870, y: 767, color: 'car-blue', speed: 400, laneOffset: -18, startDelay: 0, startingTargetWP: 3},
+            {x: 970, y: 767, color: 'car-green', speed: 392, laneOffset: 18, startDelay: 0, startingTargetWP: 3},
+            {x: 1070, y: 767, color: 'car-orange', speed: 385, laneOffset: -10, startDelay: 0, startingTargetWP: 2},
+            {x: 1170, y: 767, color: 'car-pink', speed: 378, laneOffset: 10, startDelay: 0, startingTargetWP: 2},
+            {x: 900, y: 813, color: 'car-yellow', speed: 396, laneOffset: 22, startDelay: 0, startingTargetWP: 3},
+            {x: 1000, y: 813, color: 'car-purple', speed: 388, laneOffset: -22, startDelay: 0, startingTargetWP: 3},
+            {x: 1100, y: 813, color: 'car-cyan', speed: 380, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+        ]
+    },
+    night: {
+        id: 'night',
+        name: 'Sunset Sprint',
+        trackKey: 'trackNight',
+        maskKey: 'maskNight',
+        waypoints: nightWaypoints,
+        finishX: 815,
+        playerStart: {x: 1230, y: 805, angle: 180, targetWP: 2},
+        cpuStarts: [
+            {x: 900, y: 770, color: 'car-blue', speed: 390, laneOffset: -18, startDelay: 0, startingTargetWP: 3},
+            {x: 1000, y: 770, color: 'car-green', speed: 382, laneOffset: 18, startDelay: 0, startingTargetWP: 3},
+            {x: 1100, y: 770, color: 'car-orange', speed: 376, laneOffset: -10, startDelay: 0, startingTargetWP: 2},
+            {x: 1200, y: 770, color: 'car-pink', speed: 370, laneOffset: 10, startDelay: 0, startingTargetWP: 2},
+            {x: 930, y: 815, color: 'car-yellow', speed: 386, laneOffset: 22, startDelay: 0, startingTargetWP: 3},
+            {x: 1030, y: 815, color: 'car-purple', speed: 378, laneOffset: -22, startDelay: 0, startingTargetWP: 3},
+            {x: 1130, y: 815, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+        ]
+    }
+};
+
+function storageKey(type) {
+    return `f1_${currentTrackId}_${type}`;
+}
+
 function formatTime(msTime) {
     if (msTime === Infinity || !msTime) {
         return "--:--.---";
@@ -168,8 +274,10 @@ function formatTime(msTime) {
 }
 
 function preload() {
-    this.load.image('trackImg', 'track.png');
-    this.load.image('maskImg', 'mask.png');
+    this.load.image('trackDay', 'track.png');
+    this.load.image('maskDay', 'mask.png');
+    this.load.image('trackNight', 'tracknight.png');
+    this.load.image('maskNight', 'masknight.png');
 }
 
 function generateCarSprite(scene, keyName, mainColor) {
@@ -628,7 +736,7 @@ function triggerRaceFinish(time) {
 
     if (totalRaceTime < bestRaceTime) {
         bestRaceTime = totalRaceTime;
-        localStorage.setItem('f1_bestRace', bestRaceTime);
+        localStorage.setItem(storageKey('bestRace'), bestRaceTime);
         document.getElementById('best-race').innerText = formatTime(bestRaceTime);
     }
 
@@ -639,24 +747,46 @@ function triggerRaceFinish(time) {
     playVictorySound();
 }
 
-function create() {
-    const audioBtn = document.getElementById('btn-audio');
-
-    if (audioBtn) {
-        audioBtn.textContent = "Audio: OFF";
-        audioBtn.classList.remove('on');
-        audioBtn.addEventListener('click', toggleAudio);
-    }
-
-    bestLapTime = parseFloat(localStorage.getItem('f1_bestLap')) || Infinity;
-    bestRaceTime = parseFloat(localStorage.getItem('f1_bestRace')) || Infinity;
+function readSelectedTrackBestTimes() {
+    bestLapTime = parseFloat(localStorage.getItem(storageKey('bestLap'))) || Infinity;
+    bestRaceTime = parseFloat(localStorage.getItem(storageKey('bestRace'))) || Infinity;
 
     document.getElementById('best-lap').innerText = formatTime(bestLapTime);
     document.getElementById('best-race').innerText = formatTime(bestRaceTime);
+}
 
-    const bg = this.add.image(800, 450, 'trackImg');
-    bg.setDisplaySize(1600, 900);
+function resetRaceStateForTrack(trackConfig) {
+    selectedTrackConfig = trackConfig;
+    currentTrackId = trackConfig.id;
+    currentTrackName = trackConfig.name;
+    currentFinishX = trackConfig.finishX;
+    waypoints = trackConfig.waypoints;
 
+    raceStarted = false;
+    raceFinished = false;
+    startTime = 0;
+    lapStartTime = 0;
+    laps = 1;
+    checkpointReached = false;
+    currentSpeed = 0;
+    maxSpeed = 450;
+
+    playerTargetWP = trackConfig.playerStart.targetWP || 2;
+    playerTrackProgress = 0;
+
+    document.getElementById('lap-counter').innerText = '1';
+    document.getElementById('timer-display').innerText = '00:00.000';
+    document.getElementById('results-modal').classList.remove('show');
+
+    document.querySelectorAll('.light').forEach(light => {
+        light.classList.remove('on');
+    });
+
+    safeHideRacePrompt();
+    readSelectedTrackBestTimes();
+}
+
+function loadMaskDataForTrack(scene, maskKey) {
     let offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = 1600;
     offscreenCanvas.height = 900;
@@ -665,10 +795,145 @@ function create() {
         willReadFrequently: true
     });
 
-    let srcMask = this.textures.get('maskImg').getSourceImage();
-
+    let srcMask = scene.textures.get(maskKey).getSourceImage();
     ctx.drawImage(srcMask, 0, 0, 1600, 900);
     maskData = ctx.getImageData(0, 0, 1600, 900).data;
+}
+
+function startLightSequence(scene) {
+    let lightStep = 0;
+
+    const lightsEl = document.getElementById('start-lights');
+    lightsEl.style.display = 'flex';
+
+    safeShowRacePrompt('YOU ARE THE RED CAR');
+
+    let lightInterval = setInterval(() => {
+        lightStep++;
+
+        if (lightStep <= 5) {
+            document.getElementById(`light-${lightStep}`).classList.add('on');
+            playLightSound(lightStep);
+
+            if (lightStep <= 2) {
+                safeShowRacePrompt('YOU ARE THE RED CAR');
+            } else {
+                safeShowRacePrompt('GET READY');
+            }
+        } else {
+            clearInterval(lightInterval);
+
+            document.querySelectorAll('.light').forEach(light => {
+                light.classList.remove('on');
+            });
+
+            lightsEl.style.display = 'none';
+
+            safeShowRacePrompt('GO!', true);
+            playGoSound();
+
+            setTimeout(() => {
+                safeHideRacePrompt();
+            }, 900);
+
+            raceStarted = true;
+            startTime = scene.time.now;
+            lapStartTime = startTime;
+        }
+    }, 1000);
+}
+
+function buildRaceForTrack(scene, trackConfig) {
+    resetRaceStateForTrack(trackConfig);
+
+    if (trackBackground) {
+        trackBackground.setTexture(trackConfig.trackKey);
+    } else {
+        trackBackground = scene.add.image(800, 450, trackConfig.trackKey);
+        trackBackground.setDisplaySize(1600, 900);
+        trackBackground.setDepth(0);
+    }
+
+    loadMaskDataForTrack(scene, trackConfig.maskKey);
+
+    if (cpuGroup) {
+        cpuGroup.clear(true, true);
+    } else {
+        cpuGroup = scene.physics.add.group();
+    }
+
+    if (playerCar) {
+        playerCar.destroy();
+    }
+
+    const spawnCPU = (x, y, color, speed, laneOffset = 0, startDelay = 0, startingTargetWP = 2) => {
+        let cpu = cpuGroup.create(x, y, color);
+
+        cpu.targetWP = startingTargetWP;
+        cpu.baseSpeed = speed;
+        cpu.speed = speed;
+        cpu.laneOffset = laneOffset;
+        cpu.startDelay = startDelay;
+        cpu.laps = 1;
+        cpu.checkpointReached = false;
+        cpu.prevX = cpu.x;
+        cpu.trackProgress = 0;
+        cpu.finished = false;
+        cpu.finishTime = null;
+
+        cpu.setDepth(10);
+        cpu.angle = trackConfig.playerStart.angle;
+        cpu.body.setCollideWorldBounds(true);
+        cpu.body.setBounce(0.15);
+        cpu.body.setMass(0.8);
+        cpu.body.setDrag(20);
+    };
+
+    trackConfig.cpuStarts.forEach(cpu => {
+        spawnCPU(
+            cpu.x,
+            cpu.y,
+            cpu.color,
+            cpu.speed,
+            cpu.laneOffset,
+            cpu.startDelay,
+            cpu.startingTargetWP
+        );
+    });
+
+    playerCar = scene.physics.add.sprite(
+        trackConfig.playerStart.x,
+        trackConfig.playerStart.y,
+        'car-red'
+    );
+
+    playerCar.setDepth(10);
+    playerCar.angle = trackConfig.playerStart.angle;
+    playerCar.body.setCollideWorldBounds(true);
+    playerCar.body.setBounce(0.4);
+    playerCar.body.setMass(1);
+
+    prevX = playerCar.x;
+    prevY = playerCar.y;
+
+    scene.physics.add.collider(playerCar, cpuGroup);
+    scene.physics.add.overlap(cpuGroup, cpuGroup);
+
+    startLightSequence(scene);
+}
+
+function create() {
+    const audioBtn = document.getElementById('btn-audio');
+
+    if (audioBtn) {
+        audioBtn.textContent = 'Audio: OFF';
+        audioBtn.classList.remove('on');
+        audioBtn.addEventListener('click', toggleAudio);
+    }
+
+    document.getElementById('best-lap').innerText = formatTime(Infinity);
+    document.getElementById('best-race').innerText = formatTime(Infinity);
+    document.getElementById('start-lights').style.display = 'none';
 
     generateCarSprite(this, 'car-red', 0xe10600);
     generateCarSprite(this, 'car-blue', 0x0055ff);
@@ -678,62 +943,6 @@ function create() {
     generateCarSprite(this, 'car-orange', 0xff6600);
     generateCarSprite(this, 'car-cyan', 0x00ffff);
     generateCarSprite(this, 'car-pink', 0xff00ff);
-
-    cpuGroup = this.physics.add.group();
-
-    const spawnCPU = (x, y, color, speed, laneOffset = 0, startDelay = 0, startingTargetWP = 2) => {
-        let cpu = cpuGroup.create(x, y, color);
-
-        cpu.targetWP = startingTargetWP;
-        cpu.baseSpeed = speed;
-        cpu.speed = speed;
-
-        cpu.laneOffset = laneOffset;
-        cpu.startDelay = startDelay;
-
-        cpu.laps = 1;
-        cpu.checkpointReached = false;
-        cpu.prevX = cpu.x;
-
-        cpu.trackProgress = 0;
-        cpu.finished = false;
-        cpu.finishTime = null;
-
-        cpu.setDepth(10);
-        cpu.angle = 180;
-
-        cpu.body.setCollideWorldBounds(true);
-        cpu.body.setBounce(0.15);
-        cpu.body.setMass(0.8);
-        cpu.body.setDrag(20);
-    };
-
-    // Slower AI version.
-    // No start delays, so the player does not plow into parked cars.
-    // Cars 1, 2, 5, and 6 start toward waypoint 3 to avoid starting swirl.
-    spawnCPU(870, 767, 'car-blue', 400, -18, 0, 3);
-    spawnCPU(970, 767, 'car-green', 392, 18, 0, 3);
-    spawnCPU(1070, 767, 'car-orange', 385, -10, 0, 2);
-    spawnCPU(1170, 767, 'car-pink', 378, 10, 0, 2);
-
-    spawnCPU(900, 813, 'car-yellow', 396, 22, 0, 3);
-    spawnCPU(1000, 813, 'car-purple', 388, -22, 0, 3);
-    spawnCPU(1100, 813, 'car-cyan', 380, 0, 0, 2);
-
-    // PLAYER - Grid 8
-    playerCar = this.physics.add.sprite(1200, 813, 'car-red');
-    playerCar.setDepth(10);
-    playerCar.angle = 180;
-
-    playerCar.body.setCollideWorldBounds(true);
-    playerCar.body.setBounce(0.4);
-    playerCar.body.setMass(1);
-
-    prevX = playerCar.x;
-    prevY = playerCar.y;
-
-    this.physics.add.collider(playerCar, cpuGroup);
-    this.physics.add.overlap(cpuGroup, cpuGroup);
 
     cursors = this.input.keyboard.createCursorKeys();
 
@@ -767,11 +976,9 @@ function create() {
         btn.addEventListener('pointerup', release);
         btn.addEventListener('pointercancel', release);
         btn.addEventListener('pointerleave', release);
-
         btn.addEventListener('touchstart', press, { passive: false });
         btn.addEventListener('touchend', release, { passive: false });
         btn.addEventListener('touchcancel', release, { passive: false });
-
         btn.addEventListener('mousedown', press);
         btn.addEventListener('mouseup', release);
         btn.addEventListener('mouseleave', release);
@@ -782,49 +989,33 @@ function create() {
     bindBtn('btn-gas', () => mobileGas = true, () => mobileGas = false);
     bindBtn('btn-brake', () => mobileBrake = true, () => mobileBrake = false);
 
-    // --- START LIGHTS + PROMPT ---
-    let lightStep = 0;
+    const trackSelectModal = document.getElementById('track-select-modal');
+    const chooseDayBtn = document.getElementById('btn-track-day');
+    const chooseNightBtn = document.getElementById('btn-track-night');
 
-    safeShowRacePrompt("YOU ARE THE RED CAR");
+    if (trackSelectModal) {
+        trackSelectModal.classList.add('show');
+    }
 
-    let lightInterval = setInterval(() => {
-        lightStep++;
-
-        if (lightStep <= 5) {
-            document.getElementById(`light-${lightStep}`).classList.add('on');
-
-            playLightSound(lightStep);
-
-            if (lightStep <= 2) {
-                safeShowRacePrompt("YOU ARE THE RED CAR");
-            } else {
-                safeShowRacePrompt("GET READY");
-            }
-        } else {
-            clearInterval(lightInterval);
-
-            document.querySelectorAll('.light').forEach(light => {
-                light.classList.remove('on');
-            });
-
-            document.getElementById('start-lights').style.display = 'none';
-
-            safeShowRacePrompt("GO!", true);
-            playGoSound();
-
-            setTimeout(() => {
-                safeHideRacePrompt();
-            }, 900);
-
-            raceStarted = true;
-            startTime = this.time.now;
-            lapStartTime = startTime;
+    const chooseTrack = (trackId) => {
+        if (trackSelectModal) {
+            trackSelectModal.classList.remove('show');
         }
-    }, 1000);
+
+        buildRaceForTrack(this, TRACKS[trackId]);
+    };
+
+    if (chooseDayBtn) {
+        chooseDayBtn.addEventListener('click', () => chooseTrack('day'));
+    }
+
+    if (chooseNightBtn) {
+        chooseNightBtn.addEventListener('click', () => chooseTrack('night'));
+    }
 }
 
 function update(time) {
-    if (!raceStarted || raceFinished) {
+    if (!raceStarted || raceFinished || !playerCar || !cpuGroup) {
         stopAllCars();
         return;
     }
@@ -934,8 +1125,8 @@ function update(time) {
         if (
             cpu.checkpointReached &&
             cpu.y > 700 &&
-            cpu.prevX > 730 &&
-            cpu.x <= 730
+            cpu.prevX > currentFinishX &&
+            cpu.x <= currentFinishX
         ) {
             cpu.laps++;
             cpu.checkpointReached = false;
@@ -1030,14 +1221,14 @@ function update(time) {
     if (
         checkpointReached &&
         playerCar.y > 700 &&
-        prevX > 730 &&
-        playerCar.x <= 730
+        prevX > currentFinishX &&
+        playerCar.x <= currentFinishX
     ) {
         let thisLapTime = time - lapStartTime;
 
         if (thisLapTime < bestLapTime) {
             bestLapTime = thisLapTime;
-            localStorage.setItem('f1_bestLap', bestLapTime);
+            localStorage.setItem(storageKey('bestLap'), bestLapTime);
             document.getElementById('best-lap').innerText = formatTime(bestLapTime);
         }
 
