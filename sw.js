@@ -1,5 +1,5 @@
 // BUMPED TO FORCE UPDATE ON PHONES
-const CACHE_NAME = 'f1-sprint-v28';
+const CACHE_NAME = 'f1-sprint-v29';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -8,7 +8,9 @@ const ASSETS_TO_CACHE = [
     './manifest.json',
     './js/game.js',
     './track.png',
-    './mask.png'
+    './mask.png',
+    './tracknight.png',
+    './masknight.png'
 ];
 
 self.addEventListener('install', event => {
