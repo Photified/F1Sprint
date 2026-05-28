@@ -47,10 +47,10 @@ let maxSpeed = 450;
 // Wall forgiveness tuning.
 // Instead of hard-stopping on a black mask pixel, the car is pushed back
 // to the nearest driveable pixel and loses speed like it hit a bumper.
-const WALL_SEARCH_RADIUS = 42;
-const WALL_BOUNCE_SPEED_LOSS = 0.42;
-const WALL_MIN_REBOUND_SPEED = 55;
-const WALL_REBOUND_PUSH = 8;
+const WALL_BOUNCE_SPEED_LOSS = 0.36;
+const WALL_MIN_REBOUND_SPEED = 45;
+const WALL_REBOUND_PUSH = 10;
+const WALL_STICKY_SLOWDOWN = 0.72;
 
 let mobileLeft = false;
 let mobileRight = false;
@@ -1022,22 +1022,6 @@ function create() {
 }
 
 
-function isWallPixelAt(px, py) {
-    const x = Math.floor(px);
-    const y = Math.floor(py);
-
-    if (!maskData || x < 0 || x >= 1600 || y < 0 || y >= 900) {
-        return true;
-    }
-
-    const index = (y * 1600 + x) * 4;
-    const r = maskData[index];
-    const g = maskData[index + 1];
-    const b = maskData[index + 2];
-    const a = maskData[index + 3];
-
-    return a !== 0 && r < 100 && g < 100 && b < 100;
-}
 
 function isDriveablePixelAt(px, py) {
     const x = Math.floor(px);
@@ -1058,7 +1042,7 @@ function isDriveablePixelAt(px, py) {
         return true;
     }
 
-    // Red = slow grass/runoff, still driveable.
+    // Red = slow runoff/grass, still legal.
     if (r > 100 && g < 100 && b < 100) {
         return true;
     }
@@ -1066,58 +1050,79 @@ function isDriveablePixelAt(px, py) {
     return false;
 }
 
-function findNearestDriveablePixel(fromX, fromY, fallbackX, fallbackY) {
-    if (isDriveablePixelAt(fallbackX, fallbackY)) {
-        return {x: fallbackX, y: fallbackY};
-    }
+function findSafePointBackAlongTravel(fromX, fromY, safeX, safeY) {
+    // Only search along the exact path back to the previous safe position.
+    // This prevents the old radial search from grabbing another road section
+    // across a thin wall, which caused teleporting/glitching.
+    const dx = safeX - fromX;
+    const dy = safeY - fromY;
+    const distance = Math.max(
+        Phaser.Math.Distance.Between(fromX, fromY, safeX, safeY),
+        1
+    );
 
-    if (isDriveablePixelAt(fromX, fromY)) {
-        return {x: fromX, y: fromY};
-    }
+    const steps = Math.max(8, Math.ceil(distance / 4));
 
-    // Search outward in a coarse radial pattern to find the closest legal track pixel.
-    for (let radius = 4; radius <= WALL_SEARCH_RADIUS; radius += 4) {
-        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
-            const testX = fromX + Math.cos(angle) * radius;
-            const testY = fromY + Math.sin(angle) * radius;
+    for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const testX = fromX + dx * t;
+        const testY = fromY + dy * t;
 
-            if (isDriveablePixelAt(testX, testY)) {
-                return {x: testX, y: testY};
-            }
+        if (isDriveablePixelAt(testX, testY)) {
+            return {x: testX, y: testY};
         }
     }
 
-    return {x: fallbackX, y: fallbackY};
+    // Last-resort fallback: previous frame position only.
+    return {x: safeX, y: safeY};
 }
 
 function applyWallBumper() {
-    const safePoint = findNearestDriveablePixel(
+    const safePoint = findSafePointBackAlongTravel(
         playerCar.x,
         playerCar.y,
         prevX,
         prevY
     );
 
-    const awayX = safePoint.x - playerCar.x;
-    const awayY = safePoint.y - playerCar.y;
-    const awayLength = Math.max(
-        Phaser.Math.Distance.Between(0, 0, awayX, awayY),
-        1
-    );
+    // Push from the wall-hit position back toward the safe point.
+    let awayX = safePoint.x - playerCar.x;
+    let awayY = safePoint.y - playerCar.y;
+    let awayLength = Phaser.Math.Distance.Between(0, 0, awayX, awayY);
+
+    // If the overlap was tiny, push backward along the car's facing direction.
+    if (awayLength < 1) {
+        awayX = -Math.cos(playerCar.rotation);
+        awayY = -Math.sin(playerCar.rotation);
+        awayLength = 1;
+    }
 
     playerCar.x = safePoint.x + (awayX / awayLength) * WALL_REBOUND_PUSH;
     playerCar.y = safePoint.y + (awayY / awayLength) * WALL_REBOUND_PUSH;
 
-    // Kill most forward speed, then give a small reverse/rebound impulse.
+    // If that small push still lands in a wall due to a very thin barrier,
+    // fall all the way back to the previous safe frame.
+    if (!isDriveablePixelAt(playerCar.x, playerCar.y)) {
+        playerCar.x = prevX;
+        playerCar.y = prevY;
+    }
+
     const incomingSpeed = Math.abs(currentSpeed);
+
+    // Gentle bumper response: lose speed, reverse slightly, do not launch.
     currentSpeed = -Math.max(
         WALL_MIN_REBOUND_SPEED,
         incomingSpeed * WALL_BOUNCE_SPEED_LOSS
     );
 
-    currentSpeed = Phaser.Math.Clamp(currentSpeed, -170, 120);
+    currentSpeed = Phaser.Math.Clamp(currentSpeed, -120, 80);
 
     if (playerCar.body) {
+        playerCar.body.setVelocity(0);
+        playerCar.body.setAngularVelocity(
+            playerCar.body.angularVelocity * WALL_STICKY_SLOWDOWN
+        );
+
         this.physics.velocityFromRotation(
             playerCar.rotation,
             currentSpeed,
@@ -1128,6 +1133,7 @@ function applyWallBumper() {
     prevX = playerCar.x;
     prevY = playerCar.y;
 }
+
 
 
 function update(time) {
