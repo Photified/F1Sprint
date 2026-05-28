@@ -251,11 +251,14 @@ const boneyardWaypoints = [
     // Simplified middle loop
     {x: 610, y: 535},
     {x: 780, y: 635},
+    {x: 850, y: 580},
+    {x: 860, y: 475},
     {x: 910, y: 450},
     {x: 1155, y: 520},
 
     // Simplified right-side lower section
     {x: 1350, y: 565},
+    {x: 1370, y: 650},
     {x: 1340, y: 735},
     {x: 1250, y: 745},
     {x: 1140, y: 710},
