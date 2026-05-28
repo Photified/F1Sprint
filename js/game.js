@@ -218,10 +218,63 @@ const nightWaypoints = [
     {x: 1350, y: 815}
 ];
 
+const boneyardWaypoints = [
+    // Left-side start/finish straight, driving upward
+    {x: 286, y: 640},
+    {x: 286, y: 520},
+    {x: 286, y: 390},
+    {x: 250, y: 200},
+
+    // Top-left curve into the upper straight
+    {x: 330, y: 135},
+    {x: 500, y: 145},
+    {x: 700, y: 160},
+    {x: 860, y: 175},
+    {x: 1030, y: 160},
+    {x: 1240, y: 165},
+
+    // Tighter top-right loop
+    {x: 1315, y: 180},
+    {x: 1375, y: 230},
+    {x: 1365, y: 300},
+    {x: 1275, y: 360},
+
+    // Upper middle return / anti-cut wall section
+    {x: 1165, y: 380},
+    {x: 1040, y: 365},
+    {x: 930, y: 315},
+    {x: 810, y: 300},
+    {x: 705, y: 310},
+    {x: 575, y: 285},
+    {x: 470, y: 350},
+
+    // Simplified middle loop
+    {x: 610, y: 535},
+    {x: 780, y: 635},
+    {x: 910, y: 450},
+    {x: 1155, y: 520},
+
+    // Simplified right-side lower section
+    {x: 1350, y: 565},
+    {x: 1340, y: 735},
+    {x: 1250, y: 745},
+    {x: 1140, y: 710},
+    {x: 1045, y: 710},
+
+    // Bottom return to start/finish straight
+    {x: 920, y: 740},
+    {x: 780, y: 760},
+    {x: 620, y: 770},
+    {x: 430, y: 775},
+    {x: 320, y: 735}
+];
+
+
 let waypoints = dayWaypoints;
 let currentTrackId = 'day';
 let currentTrackName = 'Classic Sprint';
 let currentFinishX = 730;
+let currentFinishY = null;
 let selectedTrackConfig = null;
 let trackBackground = null;
 
@@ -235,13 +288,13 @@ const TRACKS = {
         finishX: 730,
         playerStart: {x: 1200, y: 813, angle: 180, targetWP: 2},
         cpuStarts: [
-            {x: 870, y: 767, color: 'car-blue', speed: 400, laneOffset: -18, startDelay: 0, startingTargetWP: 3},
-            {x: 970, y: 767, color: 'car-green', speed: 392, laneOffset: 18, startDelay: 0, startingTargetWP: 3},
-            {x: 1070, y: 767, color: 'car-orange', speed: 385, laneOffset: -10, startDelay: 0, startingTargetWP: 5},
-            {x: 1170, y: 767, color: 'car-pink', speed: 378, laneOffset: 10, startDelay: 0, startingTargetWP: 5},
-            {x: 900, y: 813, color: 'car-yellow', speed: 396, laneOffset: 22, startDelay: 0, startingTargetWP: 3},
-            {x: 1000, y: 813, color: 'car-purple', speed: 388, laneOffset: -22, startDelay: 0, startingTargetWP: 3},
-            {x: 1100, y: 813, color: 'car-cyan', speed: 380, laneOffset: 0, startDelay: 0, startingTargetWP: 5}
+            {x: 870, y: 767, color: 'car-blue', speed: 400, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
+            {x: 970, y: 767, color: 'car-green', speed: 392, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
+            {x: 1070, y: 767, color: 'car-orange', speed: 385, laneOffset: -10, startDelay: 0, startingTargetWP: 2},
+            {x: 1170, y: 767, color: 'car-pink', speed: 378, laneOffset: 10, startDelay: 0, startingTargetWP: 2},
+            {x: 900, y: 813, color: 'car-yellow', speed: 396, laneOffset: 22, startDelay: 0, startingTargetWP: 2},
+            {x: 1000, y: 813, color: 'car-purple', speed: 388, laneOffset: -22, startDelay: 0, startingTargetWP: 2},
+            {x: 1100, y: 813, color: 'car-cyan', speed: 380, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
         ]
     },
     night: {
@@ -253,13 +306,32 @@ const TRACKS = {
         finishX: 805,
         playerStart: {x: 1278, y: 846, angle: 180, targetWP: 5},
         cpuStarts: [
-            {x: 936, y: 796, color: 'car-blue', speed: 390, laneOffset: -14, startDelay: 0, startingTargetWP: 5},
-            {x: 1042, y: 796, color: 'car-green', speed: 382, laneOffset: 14, startDelay: 0, startingTargetWP: 5},
-            {x: 1148, y: 796, color: 'car-orange', speed: 376, laneOffset: -8, startDelay: 0, startingTargetWP: 5},
-            {x: 1254, y: 796, color: 'car-pink', speed: 370, laneOffset: 8, startDelay: 0, startingTargetWP: 5},
-            {x: 986, y: 846, color: 'car-yellow', speed: 386, laneOffset: 18, startDelay: 0, startingTargetWP: 5},
-            {x: 1092, y: 846, color: 'car-purple', speed: 378, laneOffset: -18, startDelay: 0, startingTargetWP: 5},
-            {x: 1198, y: 846, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 5}
+            {x: 936, y: 796, color: 'car-blue', speed: 390, laneOffset: -14, startDelay: 0, startingTargetWP: 2},
+            {x: 1042, y: 796, color: 'car-green', speed: 382, laneOffset: 14, startDelay: 0, startingTargetWP: 2},
+            {x: 1148, y: 796, color: 'car-orange', speed: 376, laneOffset: -8, startDelay: 0, startingTargetWP: 2},
+            {x: 1254, y: 796, color: 'car-pink', speed: 370, laneOffset: 8, startDelay: 0, startingTargetWP: 2},
+            {x: 986, y: 846, color: 'car-yellow', speed: 386, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
+            {x: 1092, y: 846, color: 'car-purple', speed: 378, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
+            {x: 1198, y: 846, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+        ]
+    },
+    boneyard: {
+        id: 'boneyard',
+        name: 'Boneyard GP',
+        trackKey: 'trackBoneyard',
+        maskKey: 'maskBoneyard',
+        waypoints: boneyardWaypoints,
+        finishX: null,
+        finishY: 455,
+        playerStart: {x: 315, y: 660, angle: -90, targetWP: 2},
+        cpuStarts: [
+            {x: 235, y: 505, color: 'car-blue', speed: 382, laneOffset: -12, startDelay: 0, startingTargetWP: 2},
+            {x: 315, y: 505, color: 'car-green', speed: 376, laneOffset: 12, startDelay: 0, startingTargetWP: 2},
+            {x: 235, y: 565, color: 'car-orange', speed: 372, laneOffset: -8, startDelay: 0, startingTargetWP: 2},
+            {x: 315, y: 565, color: 'car-pink', speed: 368, laneOffset: 8, startDelay: 0, startingTargetWP: 2},
+            {x: 235, y: 625, color: 'car-yellow', speed: 374, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
+            {x: 315, y: 625, color: 'car-purple', speed: 366, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
+            {x: 235, y: 685, color: 'car-cyan', speed: 360, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
         ]
     }
 };
@@ -287,6 +359,8 @@ function preload() {
     this.load.image('maskDay', 'mask.png');
     this.load.image('trackNight', 'tracknight.png');
     this.load.image('maskNight', 'masknight.png');
+    this.load.image('trackBoneyard', 'boneyardtrack.png');
+    this.load.image('maskBoneyard', 'maskboneyard.png');
 }
 
 function generateCarSprite(scene, keyName, mainColor) {
@@ -769,6 +843,7 @@ function resetRaceStateForTrack(trackConfig) {
     currentTrackId = trackConfig.id;
     currentTrackName = trackConfig.name;
     currentFinishX = trackConfig.finishX;
+    currentFinishY = trackConfig.finishY || null;
     waypoints = trackConfig.waypoints;
 
     raceStarted = false;
@@ -886,6 +961,7 @@ function buildRaceForTrack(scene, trackConfig) {
         cpu.laps = 1;
         cpu.checkpointReached = false;
         cpu.prevX = cpu.x;
+        cpu.prevY = cpu.y;
         cpu.trackProgress = 0;
         cpu.finished = false;
         cpu.finishTime = null;
@@ -1001,6 +1077,7 @@ function create() {
     const trackSelectModal = document.getElementById('track-select-modal');
     const chooseDayBtn = document.getElementById('btn-track-day');
     const chooseNightBtn = document.getElementById('btn-track-night');
+    const chooseBoneyardBtn = document.getElementById('btn-track-boneyard');
 
     if (trackSelectModal) {
         trackSelectModal.classList.add('show');
@@ -1020,6 +1097,10 @@ function create() {
 
     if (chooseNightBtn) {
         chooseNightBtn.addEventListener('click', () => chooseTrack('night'));
+    }
+
+    if (chooseBoneyardBtn) {
+        chooseBoneyardBtn.addEventListener('click', () => chooseTrack('boneyard'));
     }
 }
 
@@ -1137,6 +1218,35 @@ function applyWallBumper() {
 }
 
 
+
+function hasReachedLapCheckpoint(car) {
+    if (currentTrackId === 'boneyard') {
+        // The Boneyard lap completes on the left straight while driving upward.
+        // Require the car to visit the far/right half of the course first so the
+        // opening launch over the line never counts as a completed lap.
+        return car.x > 1150;
+    }
+
+    return car.y < 350;
+}
+
+function crossedFinishLine(car, previousX, previousY) {
+    if (currentTrackId === 'boneyard') {
+        return (
+            currentFinishY !== null &&
+            car.x > 185 &&
+            car.x < 370 &&
+            previousY > currentFinishY &&
+            car.y <= currentFinishY
+        );
+    }
+
+    return (
+        car.y > 700 &&
+        previousX > currentFinishX &&
+        car.x <= currentFinishX
+    );
+}
 
 function update(time) {
     if (!raceStarted || raceFinished || !playerCar || !cpuGroup) {
@@ -1260,15 +1370,13 @@ function update(time) {
         );
 
         // CPU lap logic
-        if (cpu.y < 350) {
+        if (hasReachedLapCheckpoint(cpu)) {
             cpu.checkpointReached = true;
         }
 
         if (
             cpu.checkpointReached &&
-            cpu.y > 700 &&
-            cpu.prevX > currentFinishX &&
-            cpu.x <= currentFinishX
+            crossedFinishLine(cpu, cpu.prevX, cpu.prevY || cpu.y)
         ) {
             cpu.laps++;
             cpu.checkpointReached = false;
@@ -1287,6 +1395,7 @@ function update(time) {
         }
 
         cpu.prevX = cpu.x;
+        cpu.prevY = cpu.y;
     });
 
     if (raceFinished) {
@@ -1355,15 +1464,13 @@ function update(time) {
     updatePlayerTrackProgress();
 
     // --- PLAYER LAP LOGIC ---
-    if (playerCar.y < 350) {
+    if (hasReachedLapCheckpoint(playerCar)) {
         checkpointReached = true;
     }
 
     if (
         checkpointReached &&
-        playerCar.y > 700 &&
-        prevX > currentFinishX &&
-        playerCar.x <= currentFinishX
+        crossedFinishLine(playerCar, prevX, prevY)
     ) {
         let thisLapTime = time - lapStartTime;
 
