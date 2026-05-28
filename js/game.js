@@ -323,15 +323,15 @@ const TRACKS = {
         waypoints: boneyardWaypoints,
         finishX: null,
         finishY: 455,
-        playerStart: {x: 343, y: 725, angle: -90, targetWP: 2},
+        playerStart: {x: 335, y: 711, angle: -90, targetWP: 2},
         cpuStarts: [
-            {x: 265, y: 545, color: 'car-blue', speed: 382, laneOffset: -12, startDelay: 0, startingTargetWP: 2},
-            {x: 343, y: 545, color: 'car-green', speed: 376, laneOffset: 12, startDelay: 0, startingTargetWP: 2},
-            {x: 265, y: 605, color: 'car-orange', speed: 372, laneOffset: -8, startDelay: 0, startingTargetWP: 2},
-            {x: 343, y: 605, color: 'car-pink', speed: 368, laneOffset: 8, startDelay: 0, startingTargetWP: 2},
-            {x: 265, y: 665, color: 'car-yellow', speed: 374, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
-            {x: 343, y: 665, color: 'car-purple', speed: 366, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
-            {x: 265, y: 725, color: 'car-cyan', speed: 360, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+            {x: 257, y: 531, color: 'car-blue', speed: 382, laneOffset: -12, startDelay: 0, startingTargetWP: 2},
+            {x: 335, y: 531, color: 'car-green', speed: 376, laneOffset: 12, startDelay: 0, startingTargetWP: 2},
+            {x: 257, y: 591, color: 'car-orange', speed: 372, laneOffset: -8, startDelay: 0, startingTargetWP: 2},
+            {x: 335, y: 591, color: 'car-pink', speed: 368, laneOffset: 8, startDelay: 0, startingTargetWP: 2},
+            {x: 257, y: 651, color: 'car-yellow', speed: 374, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
+            {x: 335, y: 651, color: 'car-purple', speed: 366, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
+            {x: 257, y: 711, color: 'car-cyan', speed: 360, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
         ]
     }
 };
