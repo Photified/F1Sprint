@@ -178,12 +178,12 @@ const nightWaypoints = [
     {x: 285, y: 425},
     {x: 200, y: 325},
     {x: 180, y: 275},
-    {x: 240, y: 236},
-    {x: 405, y: 235},
-    {x: 585, y: 235},
-    {x: 770, y: 235},
-    {x: 950, y: 236},
-    {x: 1085, y: 240},
+    {x: 240, y: 194},
+    {x: 405, y: 193},
+    {x: 585, y: 193},
+    {x: 770, y: 193},
+    {x: 950, y: 194},
+    {x: 1085, y: 198},
     {x: 1140, y: 270},
     {x: 1135, y: 320},
     {x: 1080, y: 350},
@@ -227,11 +227,11 @@ const TRACKS = {
         cpuStarts: [
             {x: 870, y: 767, color: 'car-blue', speed: 400, laneOffset: -18, startDelay: 0, startingTargetWP: 3},
             {x: 970, y: 767, color: 'car-green', speed: 392, laneOffset: 18, startDelay: 0, startingTargetWP: 3},
-            {x: 1070, y: 767, color: 'car-orange', speed: 385, laneOffset: -10, startDelay: 0, startingTargetWP: 2},
-            {x: 1170, y: 767, color: 'car-pink', speed: 378, laneOffset: 10, startDelay: 0, startingTargetWP: 2},
+            {x: 1070, y: 767, color: 'car-orange', speed: 385, laneOffset: -10, startDelay: 0, startingTargetWP: 5},
+            {x: 1170, y: 767, color: 'car-pink', speed: 378, laneOffset: 10, startDelay: 0, startingTargetWP: 5},
             {x: 900, y: 813, color: 'car-yellow', speed: 396, laneOffset: 22, startDelay: 0, startingTargetWP: 3},
             {x: 1000, y: 813, color: 'car-purple', speed: 388, laneOffset: -22, startDelay: 0, startingTargetWP: 3},
-            {x: 1100, y: 813, color: 'car-cyan', speed: 380, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+            {x: 1100, y: 813, color: 'car-cyan', speed: 380, laneOffset: 0, startDelay: 0, startingTargetWP: 5}
         ]
     },
     night: {
@@ -241,15 +241,15 @@ const TRACKS = {
         maskKey: 'maskNight',
         waypoints: nightWaypoints,
         finishX: 805,
-        playerStart: {x: 1278, y: 846, angle: 180, targetWP: 2},
+        playerStart: {x: 1278, y: 846, angle: 180, targetWP: 5},
         cpuStarts: [
-            {x: 936, y: 796, color: 'car-blue', speed: 390, laneOffset: -14, startDelay: 0, startingTargetWP: 2},
-            {x: 1042, y: 796, color: 'car-green', speed: 382, laneOffset: 14, startDelay: 0, startingTargetWP: 2},
-            {x: 1148, y: 796, color: 'car-orange', speed: 376, laneOffset: -8, startDelay: 0, startingTargetWP: 2},
-            {x: 1254, y: 796, color: 'car-pink', speed: 370, laneOffset: 8, startDelay: 0, startingTargetWP: 2},
-            {x: 986, y: 846, color: 'car-yellow', speed: 386, laneOffset: 18, startDelay: 0, startingTargetWP: 2},
-            {x: 1092, y: 846, color: 'car-purple', speed: 378, laneOffset: -18, startDelay: 0, startingTargetWP: 2},
-            {x: 1198, y: 846, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 2}
+            {x: 936, y: 796, color: 'car-blue', speed: 390, laneOffset: -14, startDelay: 0, startingTargetWP: 5},
+            {x: 1042, y: 796, color: 'car-green', speed: 382, laneOffset: 14, startDelay: 0, startingTargetWP: 5},
+            {x: 1148, y: 796, color: 'car-orange', speed: 376, laneOffset: -8, startDelay: 0, startingTargetWP: 5},
+            {x: 1254, y: 796, color: 'car-pink', speed: 370, laneOffset: 8, startDelay: 0, startingTargetWP: 5},
+            {x: 986, y: 846, color: 'car-yellow', speed: 386, laneOffset: 18, startDelay: 0, startingTargetWP: 5},
+            {x: 1092, y: 846, color: 'car-purple', speed: 378, laneOffset: -18, startDelay: 0, startingTargetWP: 5},
+            {x: 1198, y: 846, color: 'car-cyan', speed: 372, laneOffset: 0, startDelay: 0, startingTargetWP: 5}
         ]
     }
 };
