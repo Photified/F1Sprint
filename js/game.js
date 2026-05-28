@@ -44,6 +44,14 @@ let prevY;
 let currentSpeed = 0;
 let maxSpeed = 450;
 
+// Wall forgiveness tuning.
+// Instead of hard-stopping on a black mask pixel, the car is pushed back
+// to the nearest driveable pixel and loses speed like it hit a bumper.
+const WALL_SEARCH_RADIUS = 42;
+const WALL_BOUNCE_SPEED_LOSS = 0.42;
+const WALL_MIN_REBOUND_SPEED = 55;
+const WALL_REBOUND_PUSH = 8;
+
 let mobileLeft = false;
 let mobileRight = false;
 let mobileGas = false;
@@ -1013,6 +1021,115 @@ function create() {
     }
 }
 
+
+function isWallPixelAt(px, py) {
+    const x = Math.floor(px);
+    const y = Math.floor(py);
+
+    if (!maskData || x < 0 || x >= 1600 || y < 0 || y >= 900) {
+        return true;
+    }
+
+    const index = (y * 1600 + x) * 4;
+    const r = maskData[index];
+    const g = maskData[index + 1];
+    const b = maskData[index + 2];
+    const a = maskData[index + 3];
+
+    return a !== 0 && r < 100 && g < 100 && b < 100;
+}
+
+function isDriveablePixelAt(px, py) {
+    const x = Math.floor(px);
+    const y = Math.floor(py);
+
+    if (!maskData || x < 0 || x >= 1600 || y < 0 || y >= 900) {
+        return false;
+    }
+
+    const index = (y * 1600 + x) * 4;
+    const r = maskData[index];
+    const g = maskData[index + 1];
+    const b = maskData[index + 2];
+    const a = maskData[index + 3];
+
+    // Transparent = normal track.
+    if (a === 0) {
+        return true;
+    }
+
+    // Red = slow grass/runoff, still driveable.
+    if (r > 100 && g < 100 && b < 100) {
+        return true;
+    }
+
+    return false;
+}
+
+function findNearestDriveablePixel(fromX, fromY, fallbackX, fallbackY) {
+    if (isDriveablePixelAt(fallbackX, fallbackY)) {
+        return {x: fallbackX, y: fallbackY};
+    }
+
+    if (isDriveablePixelAt(fromX, fromY)) {
+        return {x: fromX, y: fromY};
+    }
+
+    // Search outward in a coarse radial pattern to find the closest legal track pixel.
+    for (let radius = 4; radius <= WALL_SEARCH_RADIUS; radius += 4) {
+        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+            const testX = fromX + Math.cos(angle) * radius;
+            const testY = fromY + Math.sin(angle) * radius;
+
+            if (isDriveablePixelAt(testX, testY)) {
+                return {x: testX, y: testY};
+            }
+        }
+    }
+
+    return {x: fallbackX, y: fallbackY};
+}
+
+function applyWallBumper() {
+    const safePoint = findNearestDriveablePixel(
+        playerCar.x,
+        playerCar.y,
+        prevX,
+        prevY
+    );
+
+    const awayX = safePoint.x - playerCar.x;
+    const awayY = safePoint.y - playerCar.y;
+    const awayLength = Math.max(
+        Phaser.Math.Distance.Between(0, 0, awayX, awayY),
+        1
+    );
+
+    playerCar.x = safePoint.x + (awayX / awayLength) * WALL_REBOUND_PUSH;
+    playerCar.y = safePoint.y + (awayY / awayLength) * WALL_REBOUND_PUSH;
+
+    // Kill most forward speed, then give a small reverse/rebound impulse.
+    const incomingSpeed = Math.abs(currentSpeed);
+    currentSpeed = -Math.max(
+        WALL_MIN_REBOUND_SPEED,
+        incomingSpeed * WALL_BOUNCE_SPEED_LOSS
+    );
+
+    currentSpeed = Phaser.Math.Clamp(currentSpeed, -170, 120);
+
+    if (playerCar.body) {
+        this.physics.velocityFromRotation(
+            playerCar.rotation,
+            currentSpeed,
+            playerCar.body.velocity
+        );
+    }
+
+    prevX = playerCar.x;
+    prevY = playerCar.y;
+}
+
+
 function update(time) {
     if (!raceStarted || raceFinished || !playerCar || !cpuGroup) {
         stopAllCars();
@@ -1165,9 +1282,8 @@ function update(time) {
         if (a === 0) {
             maxSpeed = 450;
         } else if (r < 100 && g < 100 && b < 100) {
-            playerCar.x = prevX;
-            playerCar.y = prevY;
-            currentSpeed = -currentSpeed * 0.5;
+            applyWallBumper.call(this);
+            maxSpeed = 450;
         } else if (r > 100 && g < 100 && b < 100) {
             maxSpeed = 275;
         } else {
