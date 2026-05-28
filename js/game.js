@@ -65,6 +65,7 @@ let playerTrackProgress = 0;
 const CPU_WAYPOINT_REACH_RADIUS = 36;
 const CPU_SHARP_TURN_SLOWDOWN = 0.52;
 const CPU_MEDIUM_TURN_SLOWDOWN = 0.70;
+const CPU_NIGHT_INTRICATE_WP_SLOWDOWN = 0.58;
 
 // --- AUDIO STATE ---
 let audioCtx = null;
@@ -1225,6 +1226,15 @@ function update(time) {
 
         if (time - startTime < cpu.startDelay) {
             targetSpeed = 0;
+        }
+
+        // Sunset Sprint: slow the AI through the thin/intricate right-side section.
+        // These waypoint numbers match the current night-track overlay.
+        if (
+            currentTrackId === 'night' &&
+            (cpu.targetWP === 47 || cpu.targetWP === 48 || cpu.targetWP === 49)
+        ) {
+            targetSpeed *= CPU_NIGHT_INTRICATE_WP_SLOWDOWN;
         }
 
         if (Math.abs(angleDiff) > 0.9) {
