@@ -1,5 +1,5 @@
 // BUMPED TO FORCE UPDATE ON PHONES
-const CACHE_NAME = 'f1-sprint-v31';
+const CACHE_NAME = 'f1-sprint-v32';
 
 const ASSETS_TO_CACHE = [
     './',
